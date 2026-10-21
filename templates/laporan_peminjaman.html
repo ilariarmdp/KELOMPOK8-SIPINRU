@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="laporan-container">
+    <h2>Laporan Peminjaman</h2>
+    <p>Berikut daftar semua peminjaman ruangan.</p>
+
+    <table class="laporan-table">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>User</th>
+                <th>Ruangan</th>
+                <th>Mulai</th>
+                <th>Selesai</th>
+                <th>Status</th>
+                <th>Catatan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ booking.nama_pengaju }}</td>
+                <td>{{ booking.room.name }}</td>
+                <td>{{ booking.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ booking.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    {% if booking.status == 'approved' %}
+                        <span class="status approved">Disetujui</span>
+                    {% elif booking.status == 'rejected' %}
+                        <span class="status rejected">Ditolak</span>
+                    {% else %}
+                        <span class="status pending">Pending</span>
+                    {% endif %}
+                </td>
+                <td>{{ booking.notes or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="kosong">Belum ada peminjaman.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+.laporan-container {
+    padding: 30px;
+    text-align: center;
+}
+h2 {
+    color: #0b2d5c;
+    margin-bottom: 10px;
+}
+p {
+    color: #555;
+    margin-bottom: 25px;
+}
+
+.laporan-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.laporan-table th, .laporan-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+.laporan-table th {
+    background-color: #0b2d5c;
+    color: #ffffff;
+}
+
+.status {
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-weight: 500;
+    color: white;
+}
+
+.status.approved {
+    background-color: #4caf50; /* hijau */
+}
+.status.rejected {
+    background-color: #f44336; /* merah */
+}
+.status.pending {
+    background-color: #ff9800; /* oranye */
+}
+
+.kosong {
+    color: #777;
+    font-style: italic;
+    padding: 20px;
+}
+</style>
+{% endblock %}

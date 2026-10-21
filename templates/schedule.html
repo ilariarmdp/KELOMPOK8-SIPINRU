@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Jadwal Peminjaman Ruangan</h2>
+
+{% if bookings %}
+    <table>
+        <tr>
+            <th>Nama Ruangan</th>
+            <th>Waktu Mulai</th>
+            <th>Waktu Selesai</th>
+            <th>Peminjam</th>
+        </tr>
+        {% for booking in bookings %}
+        <tr>
+            <td>{{ booking.room.name }}</td>
+            <td>{{ booking.start_time.strftime('%d-%m-%Y %H:%M') }}</td>
+            <td>{{ booking.end_time.strftime('%d-%m-%Y %H:%M') }}</td>
+            <td>{{ booking.user.username }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>Belum ada jadwal peminjaman yang disetujui.</p>
+{% endif %}
+{% endblock %}

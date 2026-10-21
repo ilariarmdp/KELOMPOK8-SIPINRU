@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+    <h2 style="text-align:center; margin-bottom:20px;">Form Peminjaman</h2>
+    <p style="text-align:center; margin-bottom:30px;">Silakan isi informasi berikut untuk mengajukan peminjaman ruangan.</p>
+
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        <!-- ROW 1 -->
+        <div class="form-row">
+            <div class="form-group">
+                <label>Nama Pengaju</label>
+                {{ form.nama_pengaju(class="form-control", placeholder="Masukkan nama lengkap") }}
+            </div>
+
+            <div class="form-group">
+                <label>Ruangan</label>
+                {{ form.ruangan(class="form-control") }}
+            </div>
+        </div>
+
+        <!-- ROW 2 -->
+        <div class="form-row">
+            <div class="form-group">
+                <label>No. Telepon</label>
+                {{ form.no_telepon(class="form-control", placeholder="Masukkan nomor telepon aktif") }}
+            </div>
+
+            <div class="form-group">
+                <label>Kegiatan</label>
+                {{ form.kegiatan(class="form-control", placeholder="Tuliskan nama kegiatan") }}
+            </div>
+        </div>
+
+        <!-- ROW 3 -->
+        <div class="form-row">
+            <div class="form-group">
+                <label>Email</label>
+                {{ form.email(class="form-control", placeholder="Masukkan email aktif") }}
+            </div>
+
+            <div class="form-group">
+                <label>Status Pengaju</label>
+                {{ form.status_pengaju(class="form-control") }}
+            </div>
+        </div>
+
+        <!-- ROW 4 -->
+        <div class="form-row">
+            <div class="form-group">
+                <label>NIM / NIP</label>
+                {{ form.nim_nip(class="form-control", placeholder="Masukkan NIM atau NIP") }}
+            </div>
+
+            <div class="form-group">
+                <label>Upload Surat Izin Kegiatan (Opsional)</label>
+                {{ form.surat_izin(class="form-control") }}
+            </div>
+        </div>
+
+        <!-- ROW 5 -->
+        <div class="form-row">
+            <div class="form-group">
+                <label>Jenis Kelamin</label>
+                {{ form.jenis_kelamin(class="form-control") }}
+            </div>
+
+            <div class="form-group">
+                <label>Upload KTM</label>
+                {{ form.ktm(class="form-control") }}
+            </div>
+        </div>
+
+        <!-- ROW 6 (Datetime Picker) -->
+        <div class="form-row">
+   <div class="mb-3">
+    {{ form.start_time.label }}
+    {{ form.start_time(class="form-control") }}
+</div>
+
+<div class="mb-3">
+    {{ form.end_time.label }}
+    {{ form.end_time(class="form-control") }}
+</div>
+
+
+        <!-- ROW 7 -->
+        <div class="form-row">
+            <div class="form-group" style="grid-column: 1 / 3;">
+                <label>Catatan Tambahan (Opsional)</label>
+                {{ form.catatan(class="form-control", placeholder="Tambahkan keterangan jika perlu") }}
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit">Ajukan Peminjaman</button>
+    </form>
+</div>
+
+<style>
+.container {
+    max-width: 700px;
+    background: white;
+    margin: 30px auto;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #0b2d5c;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 8px;
+    border: 1.6px solid #ddd;
+    background: #fdfaf4;
+    font-size: 14px;
+}
+
+.btn-submit {
+    margin-top: 20px;
+    width: 100%;
+    background: #0b2d5c;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.btn-submit:hover {
+    background: #08305e;
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="auth-page {% if show_form %}is-form{% endif %}">
+
+  {# ================= HERO BAGIAN AWAL ================= #}
+  {% if not show_form %}
+  <section class="hero">
+    <div class="hero-inner">
+
+      <div class="brand-text">
+        <p class="brand-sub">Sistem Peminjaman Ruangan</p>
+        <h1 class="brand-title">Selamat Datang di SIPINRU</h1>
+
+        <div class="hero-actions">
+          <a href="{{ url_for('login', mode='admin') }}" class="pill pill-outline">Admin Login</a>
+          <a href="{{ url_for('login', mode='user') }}"  class="pill pill-solid">User Login</a>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <img src="{{ url_for('static', filename='unjani.jpg') }}" 
+             alt="Universitas Jenderal Achmad Yani" class="hero-img">
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ================= FORM LOGIN ================= #}
+  {% if show_form %}
+  <section class="auth-card">
+
+    <h2 class="card-title">
+      {% if mode == 'admin' %} Masuk sebagai Admin
+      {% elif mode == 'user' %} Masuk sebagai User
+      {% else %} Login {% endif %}
+    </h2>
+
+    <form method="POST" action="{{ url_for('login', mode=mode) }}" class="form">
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        {{ form.email.label(class="label") }}
+        {{ form.email(class="input", placeholder="email@contoh.ac.id") }}
+        {% if form.email.errors %}
+          <small class="error">{{ form.email.errors[0] }}</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.password.label(class="label") }}
+        {{ form.password(class="input", placeholder="Password") }}
+        {% if form.password.errors %}
+          <small class="error">{{ form.password.errors[0] }}</small>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn-primary">Masuk</button>
+
+      <div class="links">
+        <a href="{{ url_for('forgot_password') }}">Lupa Password?</a>
+      </div>
+    </form>
+
+  </section>
+  {% endif %}
+
+</div>
+
+
+{# ======================= CSS ======================= #}
+<style>
+:root {
+  --navy: #0b2d5c;
+  --yellow: #ffeb99;
+  --bg: #fdfaf4;
+  --ring: rgba(11,45,92,.25);
+}
+
+/* Container utama */
+.auth-page {
+  width: 100%;
+  min-height: calc(100vh - 120px);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  gap: 24px;
+}
+
+.auth-page.is-form {
+  justify-content: flex-start;
+  padding-top: 32px;
+}
+
+/* Hero Section */
+.hero {
+  width: min(1100px, 95%);
+  background: linear-gradient(135deg, rgba(11,45,92,.05), rgba(11,45,92,.04));
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 40px 50px;
+}
+
+.brand-text {
+  flex: 1;
+}
+
+.brand-sub {
+  margin: 0 0 6px 0;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.brand-title {
+  margin: 0 0 16px 0;
+  color: var(--navy);
+  font-size: clamp(28px, 3vw, 42px); /* lebih kecil dari sebelumnya */
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.pill-outline {
+  color: var(--navy);
+  border: 2px solid var(--navy);
+  background: transparent;
+}
+
+.pill-outline:hover {
+  background: rgba(11,45,92,.08);
+}
+
+.pill-solid {
+  background: var(--navy);
+  color: #fff;
+  border: 2px solid var(--navy);
+}
+
+.pill-solid:hover {
+  box-shadow: 0 6px 16px rgba(11,45,92,.25);
+  filter: brightness(.98);
+}
+
+/* Bagian kanan berisi foto unjani */
+.hero-right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.hero-img {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  border-radius: 0 24px 24px 0;
+  object-fit: cover;
+}
+
+/* Card Login */
+.auth-card {
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.06);
+  padding: 26px 22px;
+}
+
+.card-title {
+  margin: 0 0 12px 0;
+  text-align: center;
+  color: var(--navy);
+  font-weight: 800;
+  font-size: clamp(18px, 2.4vw, 24px);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.6px solid #e5e7eb;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  background: #fff;
+}
+
+.input:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.btn-primary {
+  height: 46px;
+  border-radius: 14px;
+  border: 0;
+  cursor: pointer;
+  background: var(--navy);
+  color: #fff;
+  font-weight: 800;
+}
+
+.btn-primary:hover {
+  background: var(--yellow);
+  color: var(--navy);
+  box-shadow: 0 6px 16px rgba(255,235,153,.35);
+}
+
+.links {
+  text-align: center;
+  margin-top: 6px;
+}
+
+.links a {
+  color: var(--navy);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+/* Responsif */
+@media (max-width: 850px) {
+  .hero-inner {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .hero-right {
+    display: none;
+  }
+
+  .brand-title {
+    text-align: center;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+}
+</style>
+{% endblock %}
+

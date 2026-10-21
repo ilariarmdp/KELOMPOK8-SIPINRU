@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="auth-page is-form">
+
+  <section class="auth-card">
+
+    <h2 class="card-title">Daftar Akun User</h2>
+
+    <form method="POST" action="{{ url_for('register') }}" class="form">
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        {{ form.username.label(class="label") }}
+        {{ form.username(class="input", placeholder="Nama pengguna") }}
+        {% if form.username.errors %}
+          <small class="error">{{ form.username.errors[0] }}</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.email.label(class="label") }}
+        {{ form.email(class="input", placeholder="email@unjani.ac.id") }}
+        {% if form.email.errors %}
+          <small class="error">{{ form.email.errors[0] }}</small>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        {{ form.password.label(class="label") }}
+        {{ form.password(class="input", placeholder="Password") }}
+        {% if form.password.errors %}
+          <small class="error">{{ form.password.errors[0] }}</small>
+        {% endif %}
+      </div>
+
+      <!-- TOMBOL DAFTAR ADA DI DALAM FORM -->
+      <button type="submit" class="btn-primary">Daftar</button>
+
+      <div class="links">
+        <a href="{{ url_for('login') }}">Sudah punya akun? Login</a>
+      </div>
+    </form>
+
+  </section>
+
+</div>
+
+<style>
+.auth-page {
+  width: 100%;
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px;
+}
+
+.auth-card {
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 26px 22px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.06);
+}
+
+.card-title {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  color: #0b2d5c;
+  margin-bottom: 16px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.label {
+  font-weight: 700;
+  color: #0b2d5c;
+}
+
+.input {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.6px solid #ddd;
+}
+
+.input:focus {
+  border-color: #0b2d5c;
+  box-shadow: 0 0 0 4px rgba(11,45,92,.25);
+}
+
+.btn-primary {
+  height: 46px;
+  border-radius: 14px;
+  background: #0b2d5c;
+  color: white;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #ffeb99;
+  color: #0b2d5c;
+}
+
+.links {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.links a {
+  font-weight: 700;
+  color: #0b2d5c;
+}
+</style>
+
+{% endblock %}

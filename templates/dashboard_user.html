@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="dashboard-container">
+
+  <h2 class="dashboard-title">Dashboard User</h2>
+  <p class="dashboard-welcome">Selamat datang, {{ current_user.username }}!</p>
+
+  <div class="dashboard-grid">
+
+    <!-- Ajukan Peminjaman -->
+    <a href="{{ url_for('book_room') }}" class="card">
+      <span class="emoji">📝</span>
+      <span>Ajukan Peminjaman</span>
+    </a>
+
+    <!-- Notifikasi -->
+    <a href="{{ url_for('notifications') }}" class="card">
+      <span class="emoji">🔔</span>
+      <span>Notifikasi</span>
+    </a>
+
+    <!-- Jadwal Ruangan -->
+    <a href="{{ url_for('jadwal') }}" class="card">
+      <span class="emoji">📆</span>
+      <span>Jadwal Ruangan</span>
+    </a>
+
+<!-- Data Ruangan (Read Only) -->
+<a href="{{ url_for('ruangan_user') }}" class="card">
+  <span class="emoji">🏢</span>
+  <span>Data Ruangan</span>
+</a>
+
+  </div>
+
+</div>
+
+
+
+<style>
+.dashboard-container {
+    width: min(1100px, 96%);
+    margin: 40px auto;
+    text-align: center;
+}
+
+.dashboard-title {
+    color: #0b2d5c;
+    font-size: 32px;
+    font-weight: 800;
+}
+
+.dashboard-welcome {
+    margin-bottom: 30px;
+    color: #666;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 36px;
+    justify-items: center;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--yellow);
+    color: var(--navy);
+    text-decoration: none;
+    width: 100%;
+    max-width: 320px;
+    height: 240px;
+    border-radius: 28px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .08);
+    transition: .2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0,0,0,.12);
+}
+
+.card .emoji {
+    font-size: 150px !important;
+    line-height: 1;
+}
+
+.card span {
+    font-weight: 700;
+    margin-top: 8px;
+}
+
+@media (max-width: 960px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="ruangan-container">
+    <h2>Data User</h2>
+    <p>Berikut daftar user yang terdaftar di sistem peminjaman.</p>
+
+    <table class="ruangan-table">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.role }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="kosong">Belum ada data user.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .ruangan-container {
+        padding: 30px;
+        text-align: center;
+    }
+
+    h2 {
+        color: #0b2d5c;
+        margin-bottom: 10px;
+    }
+
+    p {
+        color: #555;
+        margin-bottom: 25px;
+    }
+
+    .ruangan-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .ruangan-table th, .ruangan-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+        text-align: center;
+    }
+
+    .ruangan-table th {
+        background-color: #0b2d5c;
+        color: #ffffff;
+    }
+
+    .kosong {
+        color: #777;
+        font-style: italic;
+        padding: 20px;
+    }
+</style>
+
+{% endblock %}

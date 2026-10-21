@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="dashboard-admin-container">
+    <h2>Jadwal Ruangan</h2>
+    <p>Daftar peminjaman ruangan yang telah disetujui.</p>
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Nama Ruangan</th>
+                <th>Hari</th>
+                <th>Tanggal</th>
+                <th>Waktu</th>
+                <th>Kegiatan</th>
+                <th>Penyelenggara</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for item in jadwal %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ item.room.name }}</td>
+                <td>{{ item.start_time.strftime('%A') }}</td>
+                <td>{{ item.start_time.strftime('%d-%m-%Y') }}</td>
+                <td>
+                    {{ item.start_time.strftime('%H:%M') }} -
+                    {{ item.end_time.strftime('%H:%M') }}
+                </td>
+                <td>{{ item.kegiatan }}</td>
+                <td>{{ item.nama_pengaju }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7" class="empty">
+                    Belum ada jadwal ruangan.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

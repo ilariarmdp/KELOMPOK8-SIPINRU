@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="dashboard-container">
+  <div class="dashboard-grid">
+
+    <a href="{{ url_for('admin') }}" class="card">
+      <span class="emoji">✅</span>
+      <span>Validasi Data Pengajuan</span>
+    </a>
+
+    
+    <a href="{{ url_for('data_user') }}" class="card">
+      <span class="emoji">👥</span>
+      <span>Data User</span>
+    </a>
+
+    <a href="{{ url_for('data_ruangan') }}" class="card">
+      <span class="emoji">🏢</span>
+      <span>Data Ruangan</span>
+    </a>
+
+    <a href="{{ url_for('jadwal') }}" class="card">
+      <span class="emoji">📅</span>
+      <span>Jadwal Ruangan</span>
+    </a>
+
+    <a href="{{ url_for('laporan_peminjaman') }}" class="card">
+      <span class="emoji">📊</span>
+      <span>Laporan Peminjaman</span>
+    </a>
+
+  </div>
+</div>
+
+<style>
+  .dashboard-container {
+    width: min(1100px, 96%);
+    margin: 40px auto;
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 36px;
+    justify-items: center;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--yellow);
+    color: var(--navy);
+    text-decoration: none;
+    width: 100%;
+    max-width: 320px;
+    height: 240px;
+    border-radius: 28px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .08);
+    transition: transform .18s ease, box-shadow .18s ease;
+    font-family: "Poppins", system-ui, sans-serif;
+  }
+
+  .card span {
+    margin-top: 10px;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: .3px;
+  }
+
+  /* === FIX EMOJI TETEP KECIL === */
+  .card .emoji {
+    font-size: 150px !important; 
+    line-height: 1;
+    margin-bottom: 0;
+    display: block;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .12);
+  }
+
+  @media (max-width: 960px) {
+    .dashboard-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+  }
+</style>
+
+{% endblock %}
