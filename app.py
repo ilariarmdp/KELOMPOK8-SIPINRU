@@ -249,26 +249,29 @@ def admin():
     bookings = Booking.query.order_by(Booking.start_time.desc()).all()
 
     if request.method == 'POST':
-        booking_id = request.form.get('booking_id')
+        booking_id = request.form.get('booking_id', type=int)
         action = request.form.get('action')
-        booking = db.session.get(Booking, int(booking_id))
+        booking = db.session.get(Booking, booking_id) if booking_id else None
 
         if booking and booking.status == 'pending':
-            if action == 'approve':
-                booking.status = 'approved'
-                booking.is_read = False
-            elif action == 'reject':
-                booking.status = 'rejected'
-                booking.is_read = False
-
-            db.session.commit()
+            try:
+                if action == 'approve':
+                    booking.set_status('approved')
+                    booking.is_read = False
+                elif action == 'reject':
+                    booking.set_status('rejected')
+                    booking.is_read = False
+                db.session.commit()
+            except ValueError as e:
+                db.session.rollback()
+                flash(str(e), 'danger')
 
         return redirect(url_for('admin'))
 
     return render_template(
-    'data_pengajuan.html',
-    data=bookings,
-    title="Validasi Data Pengajuan"
+        'data_pengajuan.html',
+        data=bookings,
+        title="Validasi Data Pengajuan"
     )
 
 
@@ -420,17 +423,11 @@ def laporan_admin():
         .all()
     )
 
-    # ---- ADAPTASI DATA TANPA UBAH TEMPLATE ----
-    for b in bookings:
-        # supaya template bisa pakai booking.notes
-        if not hasattr(b, 'notes'):
-            b.notes = b.catatan
-    # ------------------------------------------
-
     return render_template(
         'laporan_peminjaman.html',
         bookings=bookings
     )
+
 
 @app.route('/admin/ruangan/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -455,18 +452,18 @@ def edit_ruangan(id):
 
 @app.route('/hapus-ruangan/<int:id>', methods=['POST'])
 @login_required
+@role_required('admin')
 def hapus_ruangan(id):
     room = Room.query.get_or_404(id)
+
+    if room.bookings:
+        flash('Ruangan tidak bisa dihapus karena masih memiliki data peminjaman.', 'danger')
+        return redirect(url_for('data_ruangan'))
+
     db.session.delete(room)
     db.session.commit()
     flash('Ruangan berhasil dihapus', 'success')
     return redirect(url_for('data_ruangan'))
-
-@app.route('/ruangan')
-@login_required
-def ruangan_user():
-    rooms = Room.query.all()
-    return render_template('ruangan_user.html', rooms=rooms)
 
 @app.route('/admin/ruangan/tambah', methods=['GET', 'POST'])
 @login_required
