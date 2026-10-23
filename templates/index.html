@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SIPINRU - Halaman Depan</title>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root{
+      --navy: #0f3760;
+      --navy-dark: #0b2b47;
+      --card-bg: #f1eeec;
+      --text-dark: #0e2b45;
+      --muted: #f7f4f1;
+    }
+
+    body{
+      font-family: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #fbf8f6;
+      color: var(--text-dark);
+      min-height: 100vh;
+    }
+
+    /* Top bar */
+    .topbar{
+      background: linear-gradient(180deg, var(--navy) 0%, var(--navy-dark) 100%);
+      color: white;
+      padding: 18px 28px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      border-bottom-left-radius: 22px;
+      border-bottom-right-radius: 22px;
+      box-shadow: 0 6px 18px rgba(11,43,71,0.18);
+    }
+    .logo{
+      width: 62px;
+      height: 62px;
+      flex: 0 0 62px;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+    .logo img{
+      width: 100%; height: 100%; object-fit: contain;
+    }
+
+    .brand h1{
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .brand p{ font-size: 13px; opacity: 0.9; }
+
+    .container{
+      max-width: 1200px;
+      margin: 48px auto;
+      padding: 0 28px;
+    }
+
+    .hero{
+      background: linear-gradient(180deg, rgba(0,0,0,0.01), rgba(0,0,0,0.015));
+      border-radius: 28px;
+      padding: 46px;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      align-items: center;
+      gap: 32px;
+      box-shadow: 0 8px 40px rgba(11,43,71,0.06);
+    }
+
+    .hero-meta { color: #9aa3ad; font-size: 14px; margin-bottom: 8px; }
+    .hero h2{
+      font-size: 56px;
+      line-height: 0.96;
+      color: var(--navy);
+      font-weight: 800;
+      margin-bottom: 18px;
+      letter-spacing: -1px;
+    }
+
+    .buttons{
+      display: flex;
+      gap: 18px;
+      margin-top: 12px;
+    }
+
+    .btn{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 26px;
+      font-weight: 700;
+      border-radius: 34px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .btn-outline{
+      border: 3px solid var(--navy);
+      color: var(--navy);
+    }
+    .btn-filled{
+      background: linear-gradient(180deg, var(--navy) 0%, var(--navy-dark) 100%);
+      color: white;
+      border: 3px solid rgba(0,0,0,0.06);
+    }
+
+    .hero-image{
+      width: 100%;
+      height: 100%;
+      background: white;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 6px solid rgba(255,255,255,0.3);
+      box-shadow: 0 6px 28px rgba(11,43,71,0.06);
+    }
+    .hero-image img{
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    @media(max-width:980px){
+      .hero { grid-template-columns: 1fr; }
+      .hero h2{ font-size: 44px; }
+      .hero-image{ height: 260px; }
+    }
+    @media(max-width:480px){
+      .hero{ padding: 22px; }
+      .hero h2{ font-size: 32px; }
+      .hero-image{ height: 180px; border-radius:12px; }
+    }
+
+    .spacer{ height:120px; }
+  </style>
+
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">
+      <img src="/static/logo.png" alt="logo">
+    </div>
+    <div class="brand">
+      <h1>Fakultas Sains dan Informatika</h1>
+      <p>Universitas Jenderal Achmad Yani</p>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="hero">
+      <div>
+        <div class="hero-meta">Sistem Peminjaman Ruangan</div>
+        <h2>Selamat Datang di<br>SIPINRU</h2>
+
+        <div class="buttons">
+          <!-- LINK SUDAH DIPERBAIKI -->
+          <a href="{{ url_for('login', mode='admin') }}" class="btn btn-outline">Admin Login</a>
+          <a href="{{ url_for('login', mode='user') }}" class="btn btn-filled">User Login</a>
+        </div>
+      </div>
+
+      <div class="hero-image">
+        <img src="/static/kampus.jpg" alt="Gambar kampus">
+      </div>
+    </section>
+
+    <div class="spacer"></div>
+
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+/* ================= ADMIN EDIT RUANGAN ================= */
+.admin-ruangan-page {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 16px;
+}
+
+.admin-ruangan-card {
+  width: 100%;
+  max-width: 720px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 40px 36px;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.08);
+}
+
+.admin-ruangan-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.admin-ruangan-header h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0b2d5c;
+  margin-bottom: 6px;
+}
+
+.admin-ruangan-header p {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* FORM */
+.admin-form-group {
+  margin-bottom: 18px;
+}
+
+.admin-form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.admin-form-control {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+}
+
+.admin-form-control:focus {
+  border-color: #0b2d5c;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(11,45,92,0.15);
+}
+
+/* ACTION */
+.admin-form-action {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.admin-btn-primary {
+  background: #0b2d5c;
+  color: #fff;
+  padding: 12px 26px;
+  border-radius: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+}
+
+.admin-btn-secondary {
+  background: #e8eef6;
+  color: #0b2d5c;
+  padding: 12px 26px;
+  border-radius: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-ruangan-page">
+  <div class="admin-ruangan-card">
+
+    <div class="admin-ruangan-header">
+      <h2>{{ title }}</h2>
+      <p>{{ subtitle }}</p>
+    </div>
+
+    <form method="POST">
+      {{ form.hidden_tag() }}
+
+      <div class="admin-form-group">
+        {{ form.nama_ruangan.label }}
+        {{ form.nama_ruangan(class="admin-form-control") }}
+      </div>
+
+      <div class="admin-form-group">
+        {{ form.kapasitas.label }}
+        {{ form.kapasitas(class="admin-form-control") }}
+      </div>
+
+      <div class="admin-form-group">
+        {{ form.fasilitas.label }}
+        {{ form.fasilitas(class="admin-form-control") }}
+      </div>
+
+      <div class="admin-form-group">
+        {{ form.status.label }}
+        {{ form.status(class="admin-form-control") }}
+      </div>
+
+      <div class="admin-form-action">
+        <button class="admin-btn-primary">Simpan</button>
+        <a href="{{ url_for('data_ruangan') }}" class="admin-btn-secondary">Batal</a>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

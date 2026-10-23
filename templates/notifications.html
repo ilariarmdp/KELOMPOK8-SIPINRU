@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="notif-wrapper">
+    <h2>Notifikasi Peminjaman</h2>
+    <p>Berikut status peminjaman ruangan yang diajukan.</p>
+
+    <div class="notif-list">
+        {% for booking in bookings %}
+        
+        <div class="notif-card 
+            {% if booking.status == 'approved' %} approved 
+            {% elif booking.status == 'rejected' %} rejected 
+            {% else %} pending 
+            {% endif %}">
+            
+            <div class="notif-icon">
+                {% if booking.status == 'approved' %}
+                    ✔
+                {% elif booking.status == 'rejected' %}
+                    ✖
+                {% else %}
+                    ⏳
+                {% endif %}
+            </div>
+
+            <div class="notif-text">
+                <p>
+                    Pengajuan peminjaman ruang 
+                    <strong>{{ booking.room.name }}</strong> 
+                    pada {{ booking.start_time.strftime('%d %B %Y') }}
+                    pukul {{ booking.start_time.strftime('%H:%M') }} WIB.
+                </p>
+
+                {% if booking.status == 'approved' %}
+                    <p>Pengajuan telah <strong>disetujui</strong>.</p>
+                {% elif booking.status == 'rejected' %}
+                    <p>Pengajuan telah <strong>ditolak</strong>.</p>
+                {% else %}
+                    <p>Pengajuan <strong>sedang menunggu validasi</strong>.</p>
+                {% endif %}
+
+                {% if booking.notes %}
+                    <p class="notes"><em>Catatan: {{ booking.notes }}</em></p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% else %}
+        <div class="notif-empty">
+            Belum ada notifikasi.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.notif-wrapper {
+    text-align: center;
+    padding: 25px 20px;
+}
+
+h2 {
+    color: #0b2d5c;
+    font-weight: 700;
+}
+
+p {
+    color: #555;
+}
+
+.notif-list {
+    margin-top: 25px;
+    max-width: 780px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.notif-card {
+    display: flex;
+    gap: 15px;
+    padding: 18px 20px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    align-items: center;
+    font-size: 15px;
+    border: 1px solid #ddd;
+}
+
+/* ICON */
+.notif-icon {
+    font-size: 26px;
+    font-weight: bold;
+}
+
+/* TEXT AREA */
+.notif-text {
+    text-align: left;
+}
+
+.notif-card.approved {
+    background-color: #d8f5d3;
+    border-left: 6px solid #4caf50;
+}
+
+.notif-card.pending {
+    background-color: #f3f3f3;
+    border-left: 6px solid #757575;
+}
+
+.notif-card.rejected {
+    background-color: #d8f5d3;
+    border-left: 6px solid #f44336;
+}
+
+.notes {
+    color: #444;
+    margin-top: 4px;
+    font-size: 14px;
+}
+
+.notif-empty {
+    margin-top: 20px;
+    font-style: italic;
+    color: #777;
+}
+</style>
+
+{% endblock %}

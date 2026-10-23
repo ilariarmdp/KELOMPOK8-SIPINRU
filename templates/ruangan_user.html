@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+/* ================= USER RUANGAN (ADMIN STYLE CLONE) ================= */
+.user-ruangan-page {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  justify-content: center;
+  padding: 48px 20px;
+}
+
+.user-ruangan-card {
+  width: 100%;
+  max-width: 1200px;
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 44px 40px;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.08);
+}
+
+/* HEADER */
+.user-ruangan-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.user-ruangan-header h2 {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0b2d5c;
+  margin-bottom: 6px;
+}
+
+.user-ruangan-header p {
+  font-size: 15px;
+  color: #64748b;
+}
+
+/* TABLE */
+.user-ruangan-table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+/* TABLE HEAD */
+.user-ruangan-table thead th {
+  background: #0b2d5c;
+  color: #ffffff;
+  padding: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* TABLE BODY */
+.user-ruangan-table tbody td {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  text-align: center;
+}
+
+.user-ruangan-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.user-ruangan-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.user-ruangan-table td:nth-child(2),
+.user-ruangan-table td:nth-child(4) {
+  text-align: left;
+}
+
+/* STATUS BADGE */
+.user-status {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.user-status.available {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.user-status.unavailable {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* EMPTY */
+.user-empty {
+  text-align: center;
+  padding: 24px;
+  color: #64748b;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .user-ruangan-card {
+    padding: 28px 22px;
+  }
+
+  .user-ruangan-header h2 {
+    font-size: 24px;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="user-ruangan-page">
+  <div class="user-ruangan-card">
+
+    <div class="user-ruangan-header">
+      <h2>Data Ruangan</h2>
+      <p>Data ruangan yang tersedia di sistem</p>
+    </div>
+
+    <table class="user-ruangan-table">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Ruangan</th>
+          <th>Kapasitas</th>
+          <th>Fasilitas</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for room in rooms %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ room.name }}</td>
+          <td>{{ room.capacity }}</td>
+          <td>{{ room.description }}</td>
+          <td>
+            {% if room.status == 'Bisa Dipakai' %}
+              <span class="user-status available">Bisa Dipakai</span>
+            {% elif room.status == 'Tidak Bisa Dipakai' %}
+              <span class="user-status unavailable">Tidak Bisa Dipakai</span>
+            {% elif room.status == 'Sedang Diperbaiki' %}
+              <span class="user-status maintenance">Sedang Diperbaiki</span>
+            {% else %}
+              <span class="user-status">{{ room.status }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="user-empty">
+            Tidak ada data ruangan
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  </div>
+</div>
+{% endblock %}

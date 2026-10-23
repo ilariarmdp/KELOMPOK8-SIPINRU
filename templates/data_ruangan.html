@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+/* ===============================
+   PAGE HEADER
+================================ */
+.page-header {
+  text-align: center;
+  margin: 40px 0 24px;
+}
+
+.page-header h2 {
+  color: #0b2d5c;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.page-header p {
+  color: #666;
+  font-size: 15px;
+}
+
+/* ===============================
+   CARD & TABLE
+================================ */
+.card.table-card {
+  max-width: 1200px;
+  margin: 0 auto 50px;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* ===============================
+   TABLE HEADER
+================================ */
+.styled-table thead th {
+  background: #0b2d5c;
+  color: #fff;
+  padding: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ===============================
+   TABLE BODY
+================================ */
+.styled-table tbody td {
+  padding: 18px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.styled-table td:nth-child(2),
+.styled-table td:nth-child(4) {
+  text-align: left;
+}
+
+/* ===============================
+   STATUS BADGE
+================================ */
+.status {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.status.available {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status.unavailable {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status.maintenance {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+/* ===============================
+   AKSI
+================================ */
+.aksi {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Data Ruangan</h2>
+  <p>Daftar ruangan yang tersedia di sistem</p>
+</div>
+
+<!-- TOMBOL TAMBAH (SATU, DI LUAR TABEL) -->
+<div style="max-width:1200px;margin:0 auto 20px;text-align:right;">
+  <a href="{{ url_for('tambah_ruangan') }}"
+     class="btn"
+     style="background:#0b2d5c;color:#fff;">
+    + Tambah Ruangan
+  </a>
+</div>
+
+<div class="card table-card">
+<table class="styled-table">
+<thead>
+<tr>
+  <th>No</th>
+  <th>Nama Ruangan</th>
+  <th>Kapasitas</th>
+  <th>Fasilitas</th>
+  <th>Status</th>
+  <th>Aksi</th>
+</tr>
+</thead>
+
+<tbody>
+{% for ruangan in rooms %}
+<tr>
+  <td>{{ loop.index }}</td>
+  <td>{{ ruangan.name }}</td>
+  <td>{{ ruangan.capacity }}</td>
+  <td>{{ ruangan.description }}</td>
+  <td>
+    {% if ruangan.status == 'Bisa Dipakai' %}
+  <span class="status available">Bisa Dipakai</span>
+{% elif ruangan.status == 'Tidak Bisa Dipakai' %}
+  <span class="status unavailable">Tidak Bisa Dipakai</span>
+{% elif ruangan.status == 'Sedang Diperbaiki' %}
+  <span class="status maintenance">Sedang Diperbaiki</span>
+{% else %}
+  <span class="status">{{ ruangan.status }}</span>
+{% endif %}
+  </td>
+  <td class="aksi">
+    <a href="{{ url_for('edit_ruangan', id=ruangan.id) }}" class="btn">Edit</a>
+    <form method="POST" action="{{ url_for('hapus_ruangan', id=ruangan.id) }}">
+      <button class="btn">Hapus</button>
+    </form>
+  </td>
+</tr>
+{% else %}
+<tr>
+  <td colspan="6">Tidak ada data ruangan</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

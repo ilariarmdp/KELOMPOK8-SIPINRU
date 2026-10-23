@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="jadwal-wrapper">
+    <h2>Jadwal Ruangan</h2>
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Nama Ruangan</th>
+                <th>Hari</th>
+                <th>Tanggal</th>
+                <th>Kegiatan</th>
+                <th>Penyelenggara</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for item in jadwal %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ item.room.name }}</td>
+                <td>{{ item.start_time.strftime('%A') }}</td>
+                <td>{{ item.start_time.strftime('%Y-%m-%d') }}</td>
+                <td>{{ item.kegiatan }}</td>
+                <td>{{ item.nama_pengaju }}</td>
+            </tr>
+
+            {% else %}
+            <tr>
+                <td colspan="6" class="empty">Belum ada data.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+.jadwal-wrapper {
+    width: 100%;
+    max-width: 1100px;
+    margin: auto;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+.jadwal-wrapper h2 {
+    color: #0b2d5c;
+    margin-bottom: 20px;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+/* TABLE */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e6e6e6;
+    text-align: center;
+    font-size: 15px;
+}
+
+.admin-table th {
+    background-color: #0b2d5c;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.admin-table tr:hover td {
+    background: #f5f9ff;
+}
+
+/* EMPTY */
+.empty {
+    padding: 25px;
+    color: #777;
+    font-style: italic;
+}
+</style>
+
+{% endblock %}

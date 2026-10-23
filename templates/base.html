@@ -1,0 +1,278 @@
+base
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ title or "SIPINRU" }}</title>
+
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+
+  <!-- FONT -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  {% block head %}{% endblock %}
+</head>
+
+{% set AUTH_ENDPOINTS = ['login','register','forgot_password','reset_password'] %}
+{% set is_auth = request.endpoint in AUTH_ENDPOINTS %}
+
+<body class="{{ 'auth-layout' if is_auth else 'app-layout' }}">
+
+  <!-- ================= TOPBAR ================= -->
+  <header class="topbar">
+    <div class="topbar-inner">
+
+      {% if not is_auth %}
+      <button class="menu-fab" id="menuBtn" aria-label="Menu">⋯</button>
+      {% endif %}
+
+      <img class="topbar-logo" src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+
+      <div class="topbar-titles">
+        <div class="brand-small">SIPINRU</div>
+        <div class="brand-main">Fakultas Sains dan Informatika</div>
+        <div class="brand-sub">Universitas Jenderal Achmad Yani</div>
+      </div>
+    </div>
+  </header>
+
+  {% if not is_auth %}
+  <!-- ================= SIDEBAR / DRAWER ================= -->
+  <aside class="drawer" id="drawer">
+    <div class="drawer-head">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" />
+
+      <div>
+        <div class="d-title">SIPINRU</div>
+        <div class="d-sub">FSI · UNJANI</div>
+      </div>
+
+      <button class="d-close" id="closeDrawer" aria-label="Tutup">✕</button>
+    </div>
+
+    <nav class="drawer-nav">
+
+      {% if current_user.is_authenticated %}
+        {% if current_user.role == 'admin' %}
+          <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">🏠 Dashboard</a>
+          <a href="{{ url_for('data_user') }}" class="{{ 'active' if request.endpoint=='data_user' }}">👥 Data User</a>
+          <a href="{{ url_for('data_ruangan') }}" class="{{ 'active' if request.endpoint=='data_ruangan' }}">🏢 Data Ruangan</a>
+          <a href="{{ url_for('admin') }}"class="{{ 'active' if request.endpoint=='admin' }}"> ✅ Validasi Data Pengajuan</a>
+          <a href="{{ url_for('jadwal') }}" class="{{ 'active' if request.endpoint=='jadwal' }}">📅 Jadwal Ruangan</a>
+          <a href="{{ url_for('laporan_peminjaman') }}" class="{{ 'active' if request.endpoint=='laporan_peminjaman' }}">📊 Laporan Peminjaman</a>
+          <hr>
+          <a href="{{ url_for('logout') }}">↩️ Logout</a>
+
+        {% else %}
+
+          <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">🏠 Dashboard</a>
+          <a href="{{ url_for('book_room') }}" class="{{ 'active' if request.endpoint=='book_room' }}">📝 Peminjaman</a>
+          <a href="{{ url_for('jadwal') }}" class="{{ 'active' if request.endpoint=='jadwal' }}">📅 Jadwal</a>
+          <a href="{{ url_for('notifications') }}" class="{{ 'active' if request.endpoint=='notifications' }}">🔔 Notifikasi</a>
+          <hr>
+          <a href="{{ url_for('logout') }}">↩️ Logout</a>
+
+        {% endif %}
+      {% endif %}
+
+    </nav>
+  </aside>
+
+  <div class="backdrop" id="backdrop"></div>
+  {% endif %}
+
+  <!-- ================= FLASH MESSAGE ================= -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        <div id="flash-message" class="flash {{ messages[0][0] }}">{{ messages[0][1] }}</div>
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+
+
+  <!-- ================= STYLE ================= -->
+  <style>
+    :root{
+      --navy:#0b2d5c;
+      --yellow-soft:#ffe995;
+      --bg:#fdfaf4;
+    }
+
+    *{margin:0;padding:0;box-sizing:border-box}
+
+    body{
+      font-family:"Poppins",sans-serif;
+      background:var(--bg);
+      color:#1f2937;
+      min-height:100vh;
+    }
+
+    /* ===== TOPBAR ===== */
+    .topbar{
+      position:fixed;
+      top:0; left:0; right:0;
+      height:74px;
+      background:linear-gradient(180deg,#0b2d5c,#0a2a56);
+      border-bottom-right-radius:36px;
+      box-shadow:0 6px 18px rgba(0,0,0,.12);
+      z-index:1000;
+    }
+
+    .topbar-inner{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      height:100%;
+      padding:0 20px;
+      color:#fff;
+    }
+
+    .topbar-inner * { color:#fff !important; }
+
+    .topbar-logo{
+      width:50px;height:50px;border-radius:50%;
+      object-fit:cover;padding:3px;
+    }
+
+    .menu-fab{
+      width:48px;height:48px;
+      border:0;border-radius:14px;
+      background:#0a2a56;color:#fff;
+      font-size:28px;display:grid;place-items:center;
+      cursor:pointer;
+      box-shadow:0 6px 16px rgba(0,0,0,.18);
+    }
+
+    .topbar-titles .brand-small{font-size:12px;font-weight:800}
+    .topbar-titles .brand-main{font-size:18px;font-weight:800}
+    .topbar-titles .brand-sub{font-size:14px;opacity:.95}
+
+    /* ===== DRAWER ===== */
+    .drawer{
+      position:fixed;top:74px;left:0;bottom:0;
+      width:280px;background:#fff;
+      box-shadow:20px 0 40px rgba(0,0,0,.1);
+      transform:translateX(-110%);
+      transition:.25s ease;
+      z-index:1100;
+      display:flex;flex-direction:column;
+    }
+
+    .drawer.open{transform:translateX(0);}
+
+    .drawer-head{
+      display:flex;align-items:center;gap:10px;
+      padding:14px 16px;border-bottom:1px solid #eee;
+    }
+
+    .drawer-head img{
+      width:42px;height:42px;border-radius:50%;
+      object-fit:cover;padding:2px;background:#fff;
+    }
+
+    .d-title{font-weight:800;color:#0b2d5c}
+    .d-sub{font-size:12px;color:#6b7280}
+
+    .d-close{
+      margin-left:auto;border:0;background:none;
+      font-size:20px;cursor:pointer;
+    }
+
+    .drawer-nav{
+      display:flex;flex-direction:column;
+      padding:10px 10px 14px;gap:6px;
+    }
+
+    .drawer-nav a{
+      text-decoration:none;
+      color:#0b2d5c;
+      font-weight:700;
+      padding:10px 12px;
+      border-radius:12px;
+      background:#f8fafc;
+      transition:.18s;
+    }
+
+    .drawer-nav a.active{background:var(--yellow-soft)}
+    .drawer-nav a:hover{filter:brightness(.98)}
+
+    .backdrop{
+      position:fixed;inset:74px 0 0 0;
+      background:rgba(0,0,0,.3);
+      opacity:0;visibility:hidden;
+      transition:.2s ease;z-index:1090;
+    }
+
+    .backdrop.show{opacity:1;visibility:visible}
+
+    /* ===== CONTENT ===== */
+    .content{
+      padding:calc(74px + 20px) 20px 40px;
+    }
+
+    /* ===== AUTH PAGE ===== */
+    .auth-layout .content{
+      display:flex;justify-content:center;align-items:center;
+    }
+
+    /* ===== FLASH ===== */
+    .flash-container{
+      position:fixed;top:86px;right:24px;
+      z-index:1200;
+    }
+
+    .flash{
+      padding:12px 18px;border-radius:12px;
+      font-weight:700;min-width:260px;
+      text-align:center;
+      box-shadow:0 8px 20px rgba(0,0,0,.08);
+    }
+
+    .flash.success{background:#dcfce7;color:#14532d}
+    .flash.info{background:#e0f2fe;color:#075985}
+    .flash.warning{background:#fef9c3;color:#92400e}
+    .flash.error{background:#fee2e2;color:#7f1d1d}
+  </style>
+
+  <!-- ================= SCRIPT ================= -->
+  <script>
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('backdrop');
+    const btn = document.getElementById('menuBtn');
+    const closeBtn = document.getElementById('closeDrawer');
+
+    function openDrawer(){
+      drawer.classList.add('open');
+      backdrop.classList.add('show');
+    }
+
+    function closeDrawer(){
+      drawer.classList.remove('open');
+      backdrop.classList.remove('show');
+    }
+
+    btn?.addEventListener('click', openDrawer);
+    closeBtn?.addEventListener('click', closeDrawer);
+    backdrop?.addEventListener('click', closeDrawer);
+
+    const flash = document.getElementById('flash-message');
+    if(flash){
+      setTimeout(()=>{
+        flash.style.opacity='0';
+        setTimeout(()=>flash.remove(),600);
+      },2000);
+    }
+  </script>
+
+</body>
+</html>

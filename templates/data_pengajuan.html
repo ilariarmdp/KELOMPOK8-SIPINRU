@@ -1,0 +1,199 @@
+data pengajuan
+
+{% extends "base.html" %}
+{% block content %}
+
+<div class="dashboard-admin-container">
+    <h2>Data Pengajuan</h2>
+    <p>Kelola data permohonan peminjaman ruangan.</p>
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Nama Pengaju</th>
+                <th>Ruangan</th>
+                <th>Kegiatan</th>
+                <th>Waktu</th>
+                <th>Tanggal</th>
+                <th>Berkas</th>
+                <th>Status</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for item in data %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ item.nama_pengaju }}</td>
+                <td>{{ item.room.name if item.room else '-' }}</td>
+                <td>{{ item.kegiatan }}</td>
+                <td>{{ item.start_time.strftime('%H:%M') }} - {{ item.end_time.strftime('%H:%M') }}</td>
+                <td>{{ item.start_time.strftime('%d-%m-%Y') }}</td>
+
+                <td>
+                    {% if item.ktm %}
+                    <a class="btn-small"
+                    href="{{ url_for('static', filename='uploads/' ~ item.ktm) }}"
+                    target="_blank">KTM</a>
+                    {% endif %}
+
+                    {% if item.surat_izin %}
+                    <a class="btn-small"
+                    href="{{ url_for('static', filename='uploads/' ~ item.surat_izin) }}"
+                    target="_blank">SIK</a>
+                    {% endif %}
+
+                </td>
+
+                <td>
+                    <span class="status 
+                        <span class="status 
+                        {% if item.status == 'approved' %} diterima
+                        {% elif item.status == 'pending' %} pending
+                        {% else %} ditolak
+                        {% endif %}">
+                        {% if item.status == 'approved' %}
+                            Approved
+                        {% elif item.status == 'pending' %}
+                            Pending
+                        {% else %}
+                            Rejected
+                        {% endif %}
+                    </span>
+
+                </td>
+
+                <td class="action-buttons">
+                {% if item.status == 'pending' %}
+                <form method="post" style="display:flex; gap:8px;">
+                    <input type="hidden" name="booking_id" value="{{ item.id }}">
+                    <button name="action" value="approve" class="btn-approve">✔ Setujui</button>
+                    <button name="action" value="reject" class="btn-reject">✖ Tolak</button>
+                </form>
+                {% else %}
+                    <span>-</span>
+                {% endif %}
+                </td>
+            </tr>
+
+            {% else %}
+            <tr>
+                <td colspan="9" class="empty">Belum ada data pengajuan.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+<style>
+.dashboard-admin-container {
+    width: 100%;
+    padding: 30px;
+    text-align: center;
+}
+
+/* Judul */
+h2 {
+    color: #0b2d5c;
+    margin-bottom: 6px;
+    font-size: 30px;
+    font-weight: 700;
+}
+
+p {
+    color: #666;
+    margin-bottom: 22px;
+}
+
+/* Table */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 14px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+    font-size: 15px;
+}
+
+.admin-table th {
+    background-color: #0b2d5c;
+    color: white;
+    font-weight: 600;
+}
+
+.empty {
+    padding: 20px;
+    color: #888;
+    font-style: italic;
+}
+
+/* Tombol kecil berkas */
+.btn-small {
+    background: #bde5ff;
+    padding: 6px 10px;
+    border-radius: 20px;
+    color: #003b6f;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+/* Status badge */
+.status {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status.diterima {
+    background: #b8f5c7;
+    color: #137a2a;
+}
+
+.status.pending {
+    background: #ffe8a8;
+    color: #9c6a00;
+}
+
+.status.ditolak {
+    background: #ffc6c6;
+    color: #b30000;
+}
+
+/* Tombol aksi */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-detail {
+    padding: 6px 14px;
+    border-radius: 18px;
+    background-color: #62c5ff;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-validasi {
+    padding: 6px 14px;
+    border-radius: 18px;
+    background-color: #a8ffb0;
+    color: #006600;
+    text-decoration: none;
+}
+</style>
+
+{% endblock %}
