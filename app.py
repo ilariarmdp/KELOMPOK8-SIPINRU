@@ -9,6 +9,7 @@ import os
 import click
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from forms import RuanganForm
+from ruangan_service import RuanganService, RuanganError
 
 
 # Import konfigurasi & modul
@@ -25,6 +26,7 @@ app.config.from_object(Config)
 #Inisialisasi Database & Migrate
 db.init_app(app)
 migrate = Migrate(app, db)
+ruangan_service = RuanganService()
 
 #Login Manager
 login_manager = LoginManager(app)
@@ -475,22 +477,19 @@ def tambah_ruangan():
     form = RuanganForm()
 
     if form.validate_on_submit():
-        room = Room(
-            name=form.nama_ruangan.data,
-            capacity=form.kapasitas.data,
-            description=form.fasilitas.data,
-            status=form.status.data
-        )
-        db.session.add(room)
-        db.session.commit()
-        flash('Ruangan berhasil ditambahkan', 'success')
-        return redirect(url_for('data_ruangan'))
+        try:
+            ruangan_service.tambah_ruangan(
+                nama=form.nama_ruangan.data,
+                kapasitas=form.kapasitas.data,
+                fasilitas=form.fasilitas.data,
+                status=form.status.data
+            )
+            flash('Ruangan berhasil ditambahkan', 'success')
+            return redirect(url_for('data_ruangan'))
+        except RuanganError as e:
+            flash(str(e), 'danger')
 
-    return render_template(
-        'ruangan_edit.html',
-        form=form,
-        title="Tambah Ruangan"
-    )
+    return render_template('ruangan_edit.html', form=form, title="Tambah Ruangan")
 
 #RUN APP
 if __name__ == '__main__':
