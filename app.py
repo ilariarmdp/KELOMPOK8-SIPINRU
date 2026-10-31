@@ -303,6 +303,13 @@ def data_ruangan():
     rooms = Room.query.all()
     return render_template('data_ruangan.html', rooms=rooms)
 
+#DATA RUANGAN (untuk user, read only)
+@app.route('/ruangan-user')
+@login_required
+def ruangan_user():
+    rooms = Room.query.all()
+    return render_template('ruangan_user.html', rooms=rooms, title="Data Ruangan")
+
 @app.route('/laporan_peminjaman')
 @login_required
 @role_required('admin')
