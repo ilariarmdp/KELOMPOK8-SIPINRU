@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -10,8 +9,9 @@ db = SQLAlchemy()
 class BaseModel(db.Model):
     __abstract__ = True
 
-    def get_info(self): 
+    def get_info(self):
         raise NotImplementedError
+
 
 # ================= USER =================
 class User(BaseModel, UserMixin):
@@ -24,7 +24,7 @@ class User(BaseModel, UserMixin):
     role = db.Column(db.String(50), default='user')
 
     def set_password(self, password):
-        self._password_hash = generate_password_hash(password) #enkapsulasi
+        self._password_hash = generate_password_hash(password)  # enkapsulasi
 
     def check_password(self, password):
         return check_password_hash(self._password_hash, password)
@@ -36,7 +36,7 @@ class User(BaseModel, UserMixin):
         return "Pengguna biasa"
 
     # OVERRIDING
-    def get_info(self): 
+    def get_info(self):
         return f"User {self.username}"
 
 
@@ -60,12 +60,16 @@ class Room(BaseModel):
         default='Bisa Dipakai'
     )
 
-  
+    # OVERRIDING
+    def get_info(self):
+        return f"Room {self.name}"
 
 
 # ================= BOOKING =================
 class Booking(BaseModel):
     __tablename__ = 'booking'
+
+    STATUS_VALID = ('pending', 'approved', 'rejected')
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -86,9 +90,19 @@ class Booking(BaseModel):
 
     catatan = db.Column(db.Text)
 
+    # nama file upload (dipakai di app.py: booking.surat_izin / booking.ktm)
+    surat_izin = db.Column(db.String(255))
+    ktm = db.Column(db.String(255))
 
-    # OVERLOADING
+    # alias agar template bisa memakai booking.notes
+    @property
+    def notes(self):
+        return self.catatan
+
+    # OVERLOADING (versi Python: parameter opsional) + validasi
     def set_status(self, status, note=None):
+        if status not in self.STATUS_VALID:
+            raise ValueError(f"Status tidak valid: {status}")
         self.status = status
         if note:
             self.catatan = note
