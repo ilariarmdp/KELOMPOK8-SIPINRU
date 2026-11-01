@@ -9,9 +9,7 @@ from wtforms import (
     IntegerField
 )
 
-from wtforms.validators import DataRequired, Email, Length, ValidationError
-from wtforms.fields import DateTimeLocalField
-
+from wtforms.validators import DataRequired, Email, Length, ValidationError, Regexp, NumberRange
 
 # =========================
 # AUTH
@@ -34,8 +32,20 @@ class LoginForm(FlaskForm):
 # =========================
 class BookingForm(FlaskForm):
     nama_pengaju = StringField('Nama Pengaju', validators=[DataRequired()])
-    nim_nip = StringField('NIM / NIP', validators=[DataRequired()])
-    no_telepon = StringField('No Telepon', validators=[DataRequired()])
+    nim_nip = StringField(
+    'NIM / NIP',
+    validators=[
+        DataRequired(),
+        Regexp(r'^[0-9]+$', message='NIM/NIP harus berupa angka.')
+    ]
+)
+    no_telepon = StringField(
+    'No Telepon',
+    validators=[
+        DataRequired(),
+        Regexp(r'^[0-9]+$', message='Nomor telepon harus berupa angka.')
+    ]
+)
     email = StringField('Email', validators=[DataRequired(), Email()])
 
     jenis_kelamin = SelectField(
@@ -113,7 +123,10 @@ class RuanganForm(FlaskForm):
 
     kapasitas = IntegerField(
         'Kapasitas',
-        validators=[DataRequired()]
+        validators=[
+            DataRequired(),
+            NumberRange(min=1, message='Kapasitas harus berupa angka minimal 1.')
+        ]
     )
 
     fasilitas = TextAreaField(
