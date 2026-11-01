@@ -5,7 +5,7 @@ class Config:
     SECRET_KEY = 'supersecretkey_sipinru_2025'
 
     # === Konfigurasi MySQL ===
-    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:@localhost/sipinru'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:@127.0.0.1:3306/sipinru?connect_timeout=5'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # === Upload ===
