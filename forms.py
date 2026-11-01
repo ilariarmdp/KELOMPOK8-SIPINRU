@@ -9,9 +9,7 @@ from wtforms import (
     IntegerField
 )
 
-from wtforms.validators import DataRequired, Email, Length, Regexp, NumberRange
-from wtforms.fields import DateTimeLocalField
-
+from wtforms.validators import DataRequired, Email, Length, ValidationError, Regexp, NumberRange
 
 # =========================
 # AUTH
@@ -102,6 +100,16 @@ class BookingForm(FlaskForm):
     )
 
     submit = SubmitField('Ajukan Peminjaman')
+
+    # DOMAIN CHECK: Validasi NIM mahasiswa
+    def validate_nim_nip(self, field):
+        if self.status_pengaju.data == 'Mahasiswa':
+            nim = (field.data or '').strip()
+
+            if not nim.isdigit() or len(nim) != 10:
+                raise ValidationError(
+                    'NIM mahasiswa harus terdiri dari tepat 10 digit angka.'
+                )
 
 
 # =========================
