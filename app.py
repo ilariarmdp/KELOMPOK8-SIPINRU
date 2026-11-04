@@ -130,27 +130,37 @@ def register():
 
     return render_template('register.html', form=form, title="Daftar Akun")
 
-#LOGIN (support mode admin/user untuk menampilkan form langsung)
+def redirect_to_dashboard():
+    return redirect(url_for('dashboard'))
+
+
+def authenticate_user(email, password):
+    """Kembalikan user jika email dan password cocok, selain itu None."""
+    user = User.query.filter_by(email=email).first()
+    if user and user.check_password(password):
+        return user
+    return None
+
+# LOGIN (support mode admin/user untuk menampilkan form langsung)
 @app.route('/login', defaults={'mode': None}, methods=['GET', 'POST'])
 @app.route('/login/<mode>', methods=['GET', 'POST'])
 def login(mode):
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+        return redirect_to_dashboard()
 
-    mode = (mode or "").lower()
-    show_form = mode in VALID_LOGIN_MODES
+    login_mode = (mode or "").lower()
+    is_valid_mode = login_mode in VALID_LOGIN_MODES
 
     form = LoginForm()
     if request.method == 'POST' and form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user and user.check_password(form.password.data):
+        user = authenticate_user(form.email.data, form.password.data)
+        if user:
             login_user(user)
             flash(f"Selamat datang, {user.username}!", FLASH_SUCCESS)
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Email atau password salah. Mohon coba lagi', FLASH_DANGER)
+            return redirect_to_dashboard()
+        flash('Email atau password salah. Mohon coba lagi', FLASH_DANGER)
 
-    return render_template('login.html', form=form, title="Login", show_form=show_form, mode=mode)
+    return render_template('login.html', form=form, title="Login", show_form=is_valid_mode, mode=login_mode)
 
 #LOGOUT
 @app.route('/logout')
