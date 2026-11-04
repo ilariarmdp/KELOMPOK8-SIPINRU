@@ -6,24 +6,58 @@ from wtforms import (
     SelectField,
     TextAreaField,
     SubmitField,
-    IntegerField
+    IntegerField,
 )
 
-from wtforms.validators import DataRequired, Email, Length, ValidationError, Regexp, NumberRange
+from wtforms.validators import (
+    DataRequired,
+    Email,
+    Length,
+    ValidationError,
+    Regexp,
+    NumberRange,
+)
 from wtforms.fields import DateTimeLocalField
+
+# =========================
+# KONSTANTA
+# =========================
+ANGKA_SAJA = r'^[0-9]+$'
+EKSTENSI_FILE = ['jpg', 'png', 'pdf']
+FORMAT_WAKTU = '%Y-%m-%dT%H:%M'
+STATUS_MAHASISWA = 'Mahasiswa'
+PANJANG_NIM_MAHASISWA = 10
+
+
+# =========================
+# FIELD YANG DIPAKAI BERULANG
+# =========================
+def buat_field_email():
+    return StringField('Email', validators=[DataRequired(), Email()])
+
+
+def buat_field_angka(label, pesan_error):
+    return StringField(
+        label,
+        validators=[
+            DataRequired(),
+            Regexp(ANGKA_SAJA, message=pesan_error),
+        ],
+    )
+
 
 # =========================
 # AUTH
 # =========================
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3)])
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    email = buat_field_email()
     password = StringField('Password', validators=[DataRequired(), Length(min=6)])
     submit = SubmitField('Daftar')
 
 
 class LoginForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    email = buat_field_email()
     password = StringField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
 
@@ -33,117 +67,99 @@ class LoginForm(FlaskForm):
 # =========================
 class BookingForm(FlaskForm):
     nama_pengaju = StringField('Nama Pengaju', validators=[DataRequired()])
-    nim_nip = StringField(
-    'NIM / NIP',
-    validators=[
-        DataRequired(),
-        Regexp(r'^[0-9]+$', message='NIM/NIP harus berupa angka.')
-    ]
-)
-
-    no_telepon = StringField(
-    'No Telepon',
-    validators=[
-        DataRequired(),
-        Regexp(r'^[0-9]+$', message='Nomor telepon harus berupa angka.')
-    ]
-)
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    nim_nip = buat_field_angka('NIM / NIP', 'NIM/NIP harus berupa angka.')
+    no_telepon = buat_field_angka('No Telepon', 'Nomor telepon harus berupa angka.')
+    email = buat_field_email()
 
     jenis_kelamin = SelectField(
         'Jenis Kelamin',
         choices=[
             ('Laki-laki', 'Laki-laki'),
-            ('Perempuan', 'Perempuan')
+            ('Perempuan', 'Perempuan'),
         ],
-        validators=[DataRequired()]
+        validators=[DataRequired()],
     )
 
     status_pengaju = SelectField(
         'Status Pengaju',
         choices=[
-            ('Mahasiswa', 'Mahasiswa'),
+            (STATUS_MAHASISWA, STATUS_MAHASISWA),
             ('Dosen', 'Dosen'),
-            ('Staff', 'Staff')
+            ('Staff', 'Staff'),
         ],
-        validators=[DataRequired()]
+        validators=[DataRequired()],
     )
 
     ruangan = SelectField(
         'Ruangan',
         coerce=int,
-        validators=[DataRequired()]
+        validators=[DataRequired()],
     )
 
     kegiatan = StringField('Kegiatan', validators=[DataRequired()])
 
     start_time = DateTimeLocalField(
         'Waktu Mulai',
-        format='%Y-%m-%dT%H:%M',
-        validators=[DataRequired()]
+        format=FORMAT_WAKTU,
+        validators=[DataRequired()],
     )
 
     end_time = DateTimeLocalField(
         'Waktu Selesai',
-        format='%Y-%m-%dT%H:%M',
-        validators=[DataRequired()]
+        format=FORMAT_WAKTU,
+        validators=[DataRequired()],
     )
 
     catatan = TextAreaField('Catatan Tambahan')
 
     surat_izin = FileField(
         'Surat Izin (Opsional)',
-        validators=[FileAllowed(['jpg', 'png', 'pdf'])]
+        validators=[FileAllowed(EKSTENSI_FILE)],
     )
 
     ktm = FileField(
         'Upload KTM',
-        validators=[DataRequired(), FileAllowed(['jpg', 'png', 'pdf'])]
+        validators=[DataRequired(), FileAllowed(EKSTENSI_FILE)],
     )
 
     submit = SubmitField('Ajukan Peminjaman')
 
-    # DOMAIN CHECK: Validasi NIM mahasiswa
     def validate_nim_nip(self, field):
-        if self.status_pengaju.data == 'Mahasiswa':
-            nim = (field.data or '').strip()
+        """Mahasiswa wajib memakai NIM tepat 10 digit angka."""
+        if self.status_pengaju.data != STATUS_MAHASISWA:
+            return
 
-            if not nim.isdigit() or len(nim) != 10:
-                raise ValidationError(
-                    'NIM mahasiswa harus terdiri dari tepat 10 digit angka.'
-                )
+        nim = (field.data or '').strip()
+        if not nim.isdigit() or len(nim) != PANJANG_NIM_MAHASISWA:
+            raise ValidationError(
+                'NIM mahasiswa harus terdiri dari tepat 10 digit angka.'
+            )
 
 
 # =========================
 # RUANGAN (ADMIN)
 # =========================
 class RuanganForm(FlaskForm):
-    nama_ruangan = StringField(
-        'Nama Ruangan',
-        validators=[DataRequired()]
-    )
+    nama_ruangan = StringField('Nama Ruangan', validators=[DataRequired()])
 
     kapasitas = IntegerField(
         'Kapasitas',
         validators=[
             DataRequired(),
-            NumberRange(min=1, message='Kapasitas harus berupa angka minimal 1.')
-        ]
+            NumberRange(min=1, message='Kapasitas harus berupa angka minimal 1.'),
+        ],
     )
 
-    fasilitas = TextAreaField(
-        'Fasilitas',
-        validators=[DataRequired()]
-    )
+    fasilitas = TextAreaField('Fasilitas', validators=[DataRequired()])
 
     status = SelectField(
         'Status Ruangan',
         choices=[
             ('Bisa Dipakai', 'Bisa Dipakai'),
             ('Tidak Bisa Dipakai', 'Tidak Bisa Dipakai'),
-            ('Sedang Diperbaiki', 'Sedang Diperbaiki')
+            ('Sedang Diperbaiki', 'Sedang Diperbaiki'),
         ],
-        validators=[DataRequired()]
+        validators=[DataRequired()],
     )
 
     submit = SubmitField('Simpan')
