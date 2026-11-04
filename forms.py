@@ -10,6 +10,7 @@ from wtforms import (
 )
 
 from wtforms.validators import DataRequired, Email, Length, ValidationError, Regexp, NumberRange
+from wtforms.fields import DateTimeLocalField
 
 # =========================
 # AUTH
@@ -39,6 +40,7 @@ class BookingForm(FlaskForm):
         Regexp(r'^[0-9]+$', message='NIM/NIP harus berupa angka.')
     ]
 )
+
     no_telepon = StringField(
     'No Telepon',
     validators=[
