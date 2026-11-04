@@ -17,7 +17,9 @@ from config import Config
 from models import db, User, Room, Booking
 from forms import RegisterForm, LoginForm, BookingForm
 from models import Room
-
+VALID_LOGIN_MODES = {"admin", "user"}
+FLASH_SUCCESS = "success"
+FLASH_DANGER = "danger"
 
 #Inisialisasi Aplikasi
 app = Flask(__name__)
@@ -136,17 +138,17 @@ def login(mode):
         return redirect(url_for('dashboard'))
 
     mode = (mode or "").lower()
-    show_form = mode in {"admin", "user"}
+    show_form = mode in VALID_LOGIN_MODES
 
     form = LoginForm()
     if request.method == 'POST' and form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and user.check_password(form.password.data):
             login_user(user)
-            flash(f"Selamat datang, {user.username}!", "success")
+            flash(f"Selamat datang, {user.username}!", FLASH_SUCCESS)
             return redirect(url_for('dashboard'))
         else:
-            flash('Email atau password salah. Mohon coba lagi', 'danger')
+            flash('Email atau password salah. Mohon coba lagi', FLASH_DANGER)
 
     return render_template('login.html', form=form, title="Login", show_form=show_form, mode=mode)
 
