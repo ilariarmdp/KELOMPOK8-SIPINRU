@@ -1,22 +1,18 @@
+import os
+from datetime import datetime
+from functools import wraps
+
+import click
 from flask import Flask, render_template, redirect, url_for, flash, request, abort
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from datetime import datetime
 from flask_migrate import Migrate
-from werkzeug.utils import secure_filename
-from functools import wraps
-from datetime import datetime
-import os
-import click
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from forms import RuanganForm
-from ruangan_service import RuanganService, RuanganError
+from werkzeug.utils import secure_filename
 
-
-# Import konfigurasi & modul
 from config import Config
+from forms import RegisterForm, LoginForm, BookingForm, RuanganForm
 from models import db, User, Room, Booking
-from forms import RegisterForm, LoginForm, BookingForm
-from models import Room
+from ruangan_service import RuanganService, RuanganError
 
 
 #Inisialisasi Aplikasi
@@ -27,6 +23,11 @@ app.config.from_object(Config)
 db.init_app(app)
 migrate = Migrate(app, db)
 ruangan_service = RuanganService()
+
+# Konstanta Status Booking
+STATUS_PENDING = 'pending'
+STATUS_APPROVED = 'approved'
+STATUS_REJECTED = 'rejected'
 
 #Login Manager
 login_manager = LoginManager(app)
@@ -255,15 +256,18 @@ def admin():
         action = request.form.get('action')
         booking = db.session.get(Booking, booking_id) if booking_id else None
 
-        if booking and booking.status == 'pending':
+        if booking and booking.status == STATUS_PENDING:
             try:
                 if action == 'approve':
-                    booking.set_status('approved')
+                    booking.set_status(STATUS_APPROVED)
                     booking.is_read = False
+
                 elif action == 'reject':
-                    booking.set_status('rejected')
+                    booking.set_status(STATUS_REJECTED)
                     booking.is_read = False
+
                 db.session.commit()
+
             except ValueError as e:
                 db.session.rollback()
                 flash(str(e), 'danger')
