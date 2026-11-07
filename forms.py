@@ -9,9 +9,8 @@ from wtforms import (
     IntegerField
 )
 
-from wtforms.validators import DataRequired, Email, Length
+from wtforms.validators import DataRequired, Email, Length, ValidationError, Regexp, NumberRange
 from wtforms.fields import DateTimeLocalField
-
 
 # =========================
 # AUTH
@@ -34,8 +33,20 @@ class LoginForm(FlaskForm):
 # =========================
 class BookingForm(FlaskForm):
     nama_pengaju = StringField('Nama Pengaju', validators=[DataRequired()])
-    nim_nip = StringField('NIM / NIP', validators=[DataRequired()])
-    no_telepon = StringField('No Telepon', validators=[DataRequired()])
+    nim_nip = StringField(
+    'NIM / NIP',
+    validators=[
+        DataRequired(),
+        Regexp(r'^[0-9]+$', message='NIM/NIP harus berupa angka.')
+    ]
+)
+    no_telepon = StringField(
+    'No Telepon',
+    validators=[
+        DataRequired(),
+        Regexp(r'^[0-9]+$', message='Nomor telepon harus berupa angka.')
+    ]
+)
     email = StringField('Email', validators=[DataRequired(), Email()])
 
     jenis_kelamin = SelectField(
@@ -91,6 +102,16 @@ class BookingForm(FlaskForm):
 
     submit = SubmitField('Ajukan Peminjaman')
 
+    # DOMAIN CHECK: Validasi NIM mahasiswa
+    def validate_nim_nip(self, field):
+        if self.status_pengaju.data == 'Mahasiswa':
+            nim = (field.data or '').strip()
+
+            if not nim.isdigit() or len(nim) != 10:
+                raise ValidationError(
+                    'NIM mahasiswa harus terdiri dari tepat 10 digit angka.'
+                )
+
 
 # =========================
 # RUANGAN (ADMIN)
@@ -103,7 +124,10 @@ class RuanganForm(FlaskForm):
 
     kapasitas = IntegerField(
         'Kapasitas',
-        validators=[DataRequired()]
+        validators=[
+            DataRequired(),
+            NumberRange(min=1, message='Kapasitas harus berupa angka minimal 1.')
+        ]
     )
 
     fasilitas = TextAreaField(

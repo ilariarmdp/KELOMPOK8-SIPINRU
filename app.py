@@ -1,24 +1,21 @@
+import os
 import re
+from datetime import datetime
+from functools import wraps
+
+import click
 from flask import Flask, render_template, redirect, url_for, flash, request, abort, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from datetime import datetime
 from flask_migrate import Migrate
-from werkzeug.utils import secure_filename
-from functools import wraps
-from datetime import datetime
-import os
-import click
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from forms import RuanganForm
+from werkzeug.utils import secure_filename
+
+from config import Config
+from forms import RegisterForm, LoginForm, BookingForm, RuanganForm
+from models import db, User, Room, Booking
 from ruangan_service import RuanganService, RuanganError
 from validasi_service import AdminValidasiService, FakultasValidasiService, ValidasiError
 
-
-# Import konfigurasi & modul
-from config import Config
-from models import db, User, Room, Booking
-from forms import RegisterForm, LoginForm, BookingForm
-from models import Room
 VALID_LOGIN_MODES = {"admin", "user", "fakultas"}
 FLASH_SUCCESS = "success"
 FLASH_DANGER = "danger"
@@ -33,6 +30,11 @@ migrate = Migrate(app, db)
 ruangan_service = RuanganService()
 admin_validasi = AdminValidasiService()
 fakultas_validasi = FakultasValidasiService()
+
+# Konstanta Status Booking
+STATUS_PENDING = 'pending'
+STATUS_APPROVED = 'approved'
+STATUS_REJECTED = 'rejected'
 
 #Login Manager
 login_manager = LoginManager(app)
@@ -718,36 +720,6 @@ def ambil_laporan_fakultas(bulan='', status='all'):
     return q.order_by(Booking.start_time.desc()).all()
 
 
-# =========================
-# LAPORAN PEMINJAMAN (FAKULTAS)
-# =========================
-NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-              'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
-
-
-def label_bulan(ym):
-    try:
-        tahun, bln = ym.split('-')
-        return f"{NAMA_BULAN[int(bln) - 1]} {tahun}"
-    except (ValueError, IndexError):
-        return ym
-
-
-def ambil_laporan_fakultas(bulan='', status='all'):
-    """Pengajuan yang sudah diputuskan fakultas, bisa difilter bulan & status."""
-    statuses = [status] if status in ('approved', 'rejected_fakultas') else ['approved', 'rejected_fakultas']
-    q = Booking.query.filter(Booking.status.in_(statuses))
-    if bulan:
-        try:
-            tahun, bln = [int(x) for x in bulan.split('-')]
-            awal = datetime(tahun, bln, 1)
-            akhir = datetime(tahun + 1, 1, 1) if bln == 12 else datetime(tahun, bln + 1, 1)
-            q = q.filter(Booking.start_time >= awal, Booking.start_time < akhir)
-        except ValueError:
-            pass
-    return q.order_by(Booking.start_time.desc()).all()
-
-
 @app.route('/fakultas/laporan')
 @login_required
 @role_required('fakultas')
@@ -792,9 +764,10 @@ def fakultas_laporan_export():
     w.writerow(['No', 'Nama Pengaju', 'Ruangan', 'Kegiatan', 'Tanggal',
                 'Jam Mulai', 'Jam Selesai', 'Catatan', 'Status'])
     for i, b in enumerate(data, 1):
+        catatan = getattr(b, 'catatan', None) or getattr(b, 'notes', None) or ''
         w.writerow([i, b.nama_pengaju, b.room.name if b.room else '-', b.kegiatan,
                     b.start_time.strftime('%d-%m-%Y'), b.start_time.strftime('%H:%M'),
-                    b.end_time.strftime('%H:%M'), b.notes or '',
+                    b.end_time.strftime('%H:%M'), catatan,
                     'Disetujui' if b.status == 'approved' else 'Ditolak Fakultas'])
 
     nama = f"laporan_peminjaman_{datetime.now().strftime('%Y%m%d')}.csv"
