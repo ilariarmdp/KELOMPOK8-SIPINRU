@@ -90,6 +90,15 @@ def forbidden(_e):
     flash("Akses ditolak. Kamu tidak memiliki izin ke halaman tersebut.", "danger")
     return redirect(url_for('dashboard'))
 
+#Helper: daftar ruangan urut abjad (paham angka: "Lab 2" sebelum "Lab 10")
+def kunci_abjad(room):
+    return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', room.name or '')]
+
+
+def semua_ruangan():
+    return sorted(Room.query.all(), key=kunci_abjad)
+
+
 #Command Init DB
 @app.cli.command("init-db")
 def init_db():
@@ -219,7 +228,7 @@ def book_room():
     form = BookingForm()
 
     # UPDATE pilihan dropdown ruangan
-    form.ruangan.choices = [(r.id, r.name) for r in Room.query.all()]
+    form.ruangan.choices = [(r.id, r.name) for r in semua_ruangan()]
 
     if form.validate_on_submit():
         booking = Booking(
@@ -332,15 +341,37 @@ def data_ruangan():
         flash("Akses ditolak. Halaman ini khusus admin.", "danger")
         return redirect(url_for('dashboard'))
     
-    rooms = Room.query.all()
+    rooms = semua_ruangan()
     return render_template('data_ruangan.html', rooms=rooms)
+
+#STATUS RUANGAN "SEDANG DIPAKAI"
+def ruangan_sedang_dipakai():
+    """{room_id: booking} untuk peminjaman yang sudah disetujui dan sedang berlangsung sekarang."""
+    sekarang = datetime.now()
+    aktif = Booking.query.filter(
+        Booking.status == 'approved',
+        Booking.start_time <= sekarang,
+        Booking.end_time >= sekarang
+    ).all()
+    return {b.room_id: b for b in aktif}
+
 
 #DATA RUANGAN (untuk user, read only)
 @app.route('/ruangan-user')
 @login_required
 def ruangan_user():
-    rooms = Room.query.all()
-    return render_template('ruangan_user.html', rooms=rooms, title="Data Ruangan")
+    rooms = semua_ruangan()
+    return render_template('ruangan_user.html', rooms=rooms, title="Data Ruangan",
+                           dipakai=ruangan_sedang_dipakai())
+
+
+@app.route('/ruangan-user/status')
+@login_required
+def ruangan_user_status():
+    return jsonify({
+        str(room_id): {'sampai': b.end_time.strftime('%H:%M'), 'kegiatan': b.kegiatan}
+        for room_id, b in ruangan_sedang_dipakai().items()
+    })
 
 @app.route('/laporan_peminjaman')
 @login_required

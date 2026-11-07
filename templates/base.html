@@ -25,7 +25,7 @@
       --text-muted:#5b6577;
       --ring:rgba(11,45,92,.25);
       --danger:#dc2626;
-      --topbar-h:76px;
+      --topbar-h:68px;
     }
 
     *{margin:0;padding:0;box-sizing:border-box}
@@ -45,16 +45,59 @@
       outline-offset:3px;
     }
 
-    /* ===== TOPBAR ===== */
+    /* ===== TOPBAR (glass navy) ===== */
     .topbar{
       position:fixed;
       top:0; left:0; right:0;
       height:var(--topbar-h);
-      background:linear-gradient(180deg,#0d3366,var(--navy-dark));
+      /* navy semi-transparan + blur = efek kaca */
+      background:linear-gradient(135deg, rgba(11,45,92,.96) 0%, rgba(29,79,145,.92) 100%);
+      -webkit-backdrop-filter:blur(10px);
+      backdrop-filter:blur(10px);
+      border-bottom:1px solid rgba(255,255,255,.18);
+      border-right:1px solid rgba(255,255,255,.10);
       border-bottom-right-radius:36px;
-      box-shadow:0 6px 18px rgba(11,45,92,.18);
+      box-shadow:
+        0 8px 24px rgba(11,45,92,.14),
+        inset 0 1px 0 rgba(255,255,255,.14);
       color:#fff;
       z-index:1000;
+      transition:box-shadow .25s ease;
+    }
+
+    /* Lapisan tambahan: makin pekat saat halaman di-scroll, supaya teks tetap terbaca */
+    .topbar::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius:inherit;
+      background:rgba(11,45,92,.3);
+      opacity:0;
+      transition:opacity .25s ease;
+      pointer-events:none;
+      z-index:-1;
+    }
+    .topbar.scrolled::before{opacity:1}
+
+    /* Kilau kaca tipis di separuh atas navbar */
+    .topbar::after{
+      content:"";
+      position:absolute;
+      left:0; right:0; top:0;
+      height:50%;
+      background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0));
+      pointer-events:none;
+      z-index:-1;
+    }
+    .topbar.scrolled{
+      box-shadow:
+        0 10px 28px rgba(11,45,92,.22),
+        inset 0 1px 0 rgba(255,255,255,.14);
+    }
+
+    /* Browser lama tanpa backdrop-filter: pakai warna lebih pekat */
+    @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+      .topbar{background:linear-gradient(135deg,#0b2d5c,#1d4f91)}
     }
 
     .topbar-inner{
@@ -67,28 +110,29 @@
 
     .menu-fab{
       flex-shrink:0;
-      width:44px;height:44px;
+      width:42px;height:42px;
       display:grid;place-items:center;
-      border:1px solid rgba(255,255,255,.22);
+      border:1px solid rgba(255,255,255,.25);
       border-radius:12px;
       background:rgba(255,255,255,.12);
       cursor:pointer;
-      transition:background .18s;
+      transition:background .18s, transform .18s;
     }
-    .menu-fab:hover{background:rgba(255,255,255,.22)}
+    .menu-fab:hover{background:rgba(255,255,255,.24);transform:translateY(-1px)}
     .menu-fab svg{display:block}
 
     .topbar-logo{
       flex-shrink:0;
-      width:48px;height:48px;
+      width:44px;height:44px;
       border-radius:50%;
       object-fit:cover;
+      box-shadow:0 0 0 2px rgba(255,255,255,.28), 0 4px 10px rgba(0,0,0,.18);
     }
 
     .topbar-titles{
       display:flex;
       flex-direction:column;
-      gap:2px;
+      gap:1px;
       min-width:0;
     }
 
@@ -97,6 +141,7 @@
       font-weight:600;
       line-height:1.3;
       color:#fff;
+      text-shadow:0 1px 2px rgba(0,0,0,.18);
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
@@ -106,7 +151,7 @@
       font-size:13px;
       font-weight:400;
       line-height:1.3;
-      color:rgba(255,255,255,.78);
+      color:rgba(255,255,255,.82);
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
@@ -116,8 +161,9 @@
       margin-left:auto;
       flex-shrink:0;
       padding:7px 16px;
-      border:1px solid rgba(255,255,255,.35);
+      border:1px solid rgba(255,255,255,.38);
       border-radius:999px;
+      background:rgba(255,255,255,.10);
       font-size:14px;
       font-weight:700;
       letter-spacing:.06em;
@@ -125,10 +171,14 @@
       color:#fff;
     }
 
-    /* ===== DRAWER ===== */
+    /* ===== DRAWER (frosted) ===== */
     .drawer{
       position:fixed;top:var(--topbar-h);left:0;bottom:0;
-      width:280px;background:#fff;
+      width:280px;
+      background:rgba(255,255,255,.9);
+      -webkit-backdrop-filter:blur(16px) saturate(150%);
+      backdrop-filter:blur(16px) saturate(150%);
+      border-right:1px solid rgba(255,255,255,.6);
       box-shadow:20px 0 40px rgba(0,0,0,.1);
       transform:translateX(-110%);
       transition:transform .25s ease;
@@ -141,7 +191,7 @@
 
     .drawer-head{
       display:flex;align-items:center;gap:10px;
-      padding:14px 16px;border-bottom:1px solid #eee;
+      padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.06);
     }
 
     .drawer-head img{
@@ -175,7 +225,7 @@
       line-height:1.4;
       padding:11px 14px;
       border-radius:12px;
-      background:#f8fafc;
+      background:rgba(248,250,252,.75);
       transition:background .18s;
     }
 
@@ -324,9 +374,10 @@
     }
 
     @media (max-width:640px){
-      :root{--topbar-h:68px}
+      :root{--topbar-h:62px}
       .topbar-inner{padding:0 24px 0 14px;gap:10px}
-      .topbar-logo{width:42px;height:42px}
+      .topbar-logo{width:38px;height:38px}
+      .menu-fab{width:38px;height:38px}
       .topbar-org{font-size:14px}
       .topbar-unit{font-size:12px}
       .topbar-app{display:none}
@@ -413,7 +464,7 @@
           <a href="{{ url_for('logout') }}">↩️ Logout</a>
 
         {% elif current_user.role == 'fakultas' %}
-          <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">🏠 Dashboard</a>
+          <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">🏠 Homepage</a>
           <a href="{{ url_for('fakultas_validasi_page') }}" class="{{ 'active' if request.endpoint=='fakultas_validasi_page' }}">✅ Validasi Pengajuan</a>
           <a href="{{ url_for('fakultas_notifikasi') }}" class="{{ 'active' if request.endpoint=='fakultas_notifikasi' }}">🔔 Notifikasi</a>
           <a href="{{ url_for('fakultas_laporan') }}" class="{{ 'active' if request.endpoint=='fakultas_laporan' }}">📊 Laporan Peminjaman</a>
@@ -422,7 +473,7 @@
 
         {% else %}
 
-          <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">🏠 Dashboard</a>
+          <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">🏠 Homepage</a>
           <a href="{{ url_for('book_room') }}" class="{{ 'active' if request.endpoint=='book_room' }}">📝 Peminjaman</a>
           <a href="{{ url_for('jadwal') }}" class="{{ 'active' if request.endpoint=='jadwal' }}">📅 Jadwal</a>
           <a href="{{ url_for('notifications') }}" class="{{ 'active' if request.endpoint=='notifications' }}">🔔 Notifikasi</a>
@@ -485,6 +536,14 @@
         setTimeout(()=>flash.remove(),600);
       },2000);
     }
+
+    // Navbar glass: sedikit lebih pekat saat halaman di-scroll
+    const topbar = document.querySelector('.topbar');
+    function onScroll(){
+      topbar?.classList.toggle('scrolled', window.scrollY > 8);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
   </script>
 
     {% if current_user.is_authenticated and current_user.role == 'admin' %}

@@ -107,19 +107,19 @@
           </div>
 
           <div class="pf-field">
-            <label for="nim_nip">{{ id_label }}</label>
-            <input type="text" id="nim_nip" name="nim_nip" value="{{ user.nim_nip or '' }}" maxlength="50" placeholder="{{ id_label }}">
+            <label for="nim_nip">{{ id_label }} <span class="req">*</span></label>
+            <input type="text" id="nim_nip" name="nim_nip" value="{{ user.nim_nip or '' }}" maxlength="50" required placeholder="{{ id_label }}">
           </div>
 
           <div class="pf-field">
-            <label for="prodi">{{ unit_label }}</label>
-            <input type="text" id="prodi" name="prodi" value="{{ user.prodi or '' }}" maxlength="100"
+            <label for="prodi">{{ unit_label }} <span class="req">*</span></label>
+            <input type="text" id="prodi" name="prodi" value="{{ user.prodi or '' }}" maxlength="100" required
                    placeholder="{{ 'Contoh: Sistem Informasi' if user.role == 'user' else 'Contoh: Staf TU Prodi Sistem Informasi' }}">
           </div>
 
           <div class="pf-field">
-            <label for="no_hp">No. HP</label>
-            <input type="text" id="no_hp" name="no_hp" value="{{ user.no_hp or '' }}" maxlength="20" inputmode="tel" placeholder="08xxxxxxxxxx">
+            <label for="no_hp">No. HP <span class="req">*</span></label>
+            <input type="text" id="no_hp" name="no_hp" value="{{ user.no_hp or '' }}" maxlength="20" required inputmode="tel" pattern="[0-9]+" title="Hanya angka" placeholder="08xxxxxxxxxx">
           </div>
 
           <div class="pf-field">
