@@ -23,16 +23,44 @@ class User(BaseModel, UserMixin):
     _password_hash = db.Column("password_hash", db.String(255), nullable=False)
     role = db.Column(db.String(50), default='user')
 
+    # --- data profil ---
+    nama_lengkap = db.Column(db.String(150))
+    nim_nip = db.Column(db.String(50))
+    prodi = db.Column(db.String(100))
+    no_hp = db.Column(db.String(20))
+    foto = db.Column(db.String(255))
+
+    ROLE_LABEL = {'admin': 'Admin Prodi', 'fakultas': 'Fakultas', 'user': 'Mahasiswa'}
+
+    @property
+    def role_label(self):
+        return self.ROLE_LABEL.get(self.role, self.role)
+
+    @property
+    def display_name(self):
+        return self.nama_lengkap or self.username
+
+    @property
+    def initial(self):
+        return (self.display_name or '?')[0].upper()
+
+    @property
+    def profile_completeness(self):
+        isi = [self.nama_lengkap, self.nim_nip, self.prodi, self.no_hp, self.foto]
+        return int(sum(1 for x in isi if x) / len(isi) * 100)
+    
     def set_password(self, password):
         self._password_hash = generate_password_hash(password)  # enkapsulasi
 
     def check_password(self, password):
         return check_password_hash(self._password_hash, password)
 
-    # POLYMORPHISM
+        # POLYMORPHISM
     def get_role_info(self):
         if self.role == "admin":
             return "Administrator"
+        if self.role == "fakultas":
+            return "Pihak Fakultas"
         return "Pengguna biasa"
 
     # OVERRIDING
@@ -69,7 +97,16 @@ class Room(BaseModel):
 class Booking(BaseModel):
     __tablename__ = 'booking'
 
-    STATUS_VALID = ('pending', 'approved', 'rejected')
+    STATUS_VALID = ('pending', 'approved_admin', 'approved',
+                    'rejected', 'rejected_fakultas')
+
+    STATUS_LABEL = {
+        'pending': 'Menunggu Admin',
+        'approved_admin': 'Disetujui Admin, Menunggu Fakultas',
+        'approved': 'Disetujui',
+        'rejected': 'Ditolak Admin',
+        'rejected_fakultas': 'Ditolak Fakultas',
+    }
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -95,6 +132,10 @@ class Booking(BaseModel):
     ktm = db.Column(db.String(255))
 
     # alias agar template bisa memakai booking.notes
+    @property
+    def status_label(self):
+        return self.STATUS_LABEL.get(self.status, self.status)
+    
     @property
     def notes(self):
         return self.catatan
