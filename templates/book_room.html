@@ -1,149 +1,161 @@
 {% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='admin_pages.css') }}">
+{% endblock %}
+
 {% block content %}
 
 <!-- ================== BAGIAN SOURCE CODE ============== -->
 
-<div class="container">
-    <h2 style="text-align:center; margin-bottom:20px;">Form Peminjaman</h2>
-    <p style="text-align:center; margin-bottom:30px;">
-        Silakan isi informasi berikut untuk mengajukan peminjaman ruangan.
-    </p>
+<div class="ap">
 
-    <!-- EXISTENCE CHECK [1/4]: name="bookForm" dan onsubmit="return validateForm()" memanggil fungsi pengecekan saat tombol submit ditekan -->
-    <form name="bookForm" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
-        {{ form.hidden_tag() }}
+    <header class="ap-top">
+        <span class="ap-tag"><i></i> Panel User</span>
+        <h1 class="ap-h1">Form Peminjaman</h1>
+        <p class="ap-lead">
+            Silakan isi informasi berikut untuk mengajukan peminjaman ruangan.
+            Kolom bertanda <span class="req">*</span> wajib diisi.
+        </p>
+    </header>
 
-        <!-- ROW 1 -->
-        <div class="form-row">
-            <div class="form-group">
-                <label>Nama Pengaju</label>
-                <!-- EXISTENCE CHECK [2/4]: id="nama_pengaju" agar terbaca JavaScript, required=False agar pop up bawaan browser tidak muncul -->
-                {{ form.nama_pengaju(class="form-control", placeholder="Masukkan nama lengkap", id="nama_pengaju", required=False) }}
-                {% for error in form.nama_pengaju.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
+    <div class="bk-card">
+        <!-- novalidate: pengecekan dilakukan oleh validateForm() agar tampil sebagai notifikasi, bukan pop up bawaan browser -->
+        <form name="bookForm" method="POST" enctype="multipart/form-data" novalidate onsubmit="return validateForm()">
+            {{ form.hidden_tag() }}
+
+            <!-- ROW 1 -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nama_pengaju">Nama Pengaju <span class="req">*</span></label>
+                    {{ form.nama_pengaju(class="form-control", placeholder="Masukkan nama lengkap", id="nama_pengaju", required=False) }}
+                    {% for error in form.nama_pengaju.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <label for="ruangan">Ruangan <span class="req">*</span></label>
+                    {{ form.ruangan(class="form-control", required=False) }}
+                    {% for error in form.ruangan.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Ruangan</label>
-                {{ form.ruangan(class="form-control") }}
-                {% for error in form.ruangan.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
-            </div>
-        </div>
+            <!-- ROW 2 -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="no_telepon">No. Telepon <span class="req">*</span></label>
+                    {{ form.no_telepon(class="form-control", placeholder="Masukkan nomor telepon aktif", required=False) }}
+                    {% for error in form.no_telepon.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
 
-        <!-- ROW 2 -->
-        <div class="form-row">
-            <div class="form-group">
-                <label>No. Telepon</label>
-                {{ form.no_telepon(class="form-control", placeholder="Masukkan nomor telepon aktif") }}
-                {% for error in form.no_telepon.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                <label>Kegiatan</label>
-                {{ form.kegiatan(class="form-control", placeholder="Tuliskan nama kegiatan") }}
-                {% for error in form.kegiatan.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- ROW 3 -->
-        <div class="form-row">
-            <div class="form-group">
-                <label>Email</label>
-                {{ form.email(class="form-control", placeholder="Masukkan email aktif") }}
-                {% for error in form.email.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
+                <div class="form-group">
+                    <label for="kegiatan">Kegiatan <span class="req">*</span></label>
+                    {{ form.kegiatan(class="form-control", placeholder="Tuliskan nama kegiatan", required=False) }}
+                    {% for error in form.kegiatan.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Status Pengaju</label>
-                {{ form.status_pengaju(class="form-control") }}
-                {% for error in form.status_pengaju.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
-            </div>
-        </div>
+            <!-- ROW 3 -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="email">Email <span class="req">*</span></label>
+                    {{ form.email(class="form-control", placeholder="Masukkan email aktif", required=False) }}
+                    {% for error in form.email.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
 
-        <!-- ROW 4 -->
-        <div class="form-row">
-            <div class="form-group">
-                <label>NIM / NIP</label>
-                {{ form.nim_nip(class="form-control", placeholder="Masukkan NIM atau NIP") }}
-                {% for error in form.nim_nip.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
-            </div>
-
-            <div class="form-group">
-                <label>Upload Surat Izin Kegiatan (Opsional)</label>
-                {{ form.surat_izin(class="form-control") }}
-                {% for error in form.surat_izin.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- ROW 5 -->
-        <div class="form-row">
-            <div class="form-group">
-                <label>Jenis Kelamin</label>
-                {{ form.jenis_kelamin(class="form-control") }}
-                {% for error in form.jenis_kelamin.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
+                <div class="form-group">
+                    <label for="status_pengaju">Status Pengaju <span class="req">*</span></label>
+                    {{ form.status_pengaju(class="form-control", required=False) }}
+                    {% for error in form.status_pengaju.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Upload KTM</label>
-                {{ form.ktm(class="form-control") }}
-                {% for error in form.ktm.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
-            </div>
-        </div>
+            <!-- ROW 4 -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nim_nip">NIM / NIP <span class="req">*</span></label>
+                    {{ form.nim_nip(class="form-control", placeholder="Masukkan NIM atau NIP", required=False) }}
+                    {% for error in form.nim_nip.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
 
-        <!-- ROW 6 -->
-        <div class="form-row">
-            <div class="form-group">
-                <label>Waktu Mulai</label>
-                {{ form.start_time(class="form-control") }}
-                {% for error in form.start_time.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
+                <div class="form-group">
+                    <label for="surat_izin">Upload Surat Izin Kegiatan (Opsional)</label>
+                    {{ form.surat_izin(class="form-control") }}
+                    {% for error in form.surat_izin.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Waktu Selesai</label>
-                {{ form.end_time(class="form-control") }}
-                {% for error in form.end_time.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
-            </div>
-        </div>
+            <!-- ROW 5 -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="jenis_kelamin">Jenis Kelamin <span class="req">*</span></label>
+                    {{ form.jenis_kelamin(class="form-control", required=False) }}
+                    {% for error in form.jenis_kelamin.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
 
-        <!-- ROW 7 -->
-        <div class="form-row">
-            <div class="form-group" style="grid-column: 1 / 3;">
-                <label>Catatan Tambahan (Opsional)</label>
-                {{ form.catatan(class="form-control", placeholder="Tambahkan keterangan jika perlu") }}
-                {% for error in form.catatan.errors %}
-                    <small class="error-message">{{ error }}</small>
-                {% endfor %}
+                <div class="form-group">
+                    <label for="ktm">Upload KTM <span class="req">*</span></label>
+                    {{ form.ktm(class="form-control", required=False) }}
+                    {% for error in form.ktm.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
 
-        <button type="submit" class="btn-submit">Ajukan Peminjaman</button>
-    </form>
+            <!-- ROW 6 -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="start_time">Waktu Mulai <span class="req">*</span></label>
+                    {{ form.start_time(class="form-control", required=False) }}
+                    {% for error in form.start_time.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group">
+                    <label for="end_time">Waktu Selesai <span class="req">*</span></label>
+                    {{ form.end_time(class="form-control", required=False) }}
+                    {% for error in form.end_time.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ROW 7 -->
+            <div class="form-row">
+                <div class="form-group" style="grid-column: 1 / 3;">
+                    <label for="catatan">Catatan Tambahan (Opsional)</label>
+                    {{ form.catatan(class="form-control", placeholder="Tambahkan keterangan jika perlu") }}
+                    {% for error in form.catatan.errors %}
+                        <small class="error-message">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit" class="bk-submit">Ajukan Peminjaman</button>
+        </form>
+    </div>
+
 </div>
 
-<!-- EXISTENCE CHECK [3/4]: MULAI - Kotak notifikasi (toast) bergaya "Pemberitahuan" -->
+<!-- Kotak notifikasi (toast) bergaya "Pemberitahuan" -->
 <div id="toast-notif" class="toast-notif" role="alert">
     <div class="toast-icon">!</div>
     <div class="toast-body">
@@ -153,7 +165,7 @@
     <button type="button" class="toast-close" onclick="hideToast()">&times;</button>
 </div>
 
-<!-- EXISTENCE CHECK [4/4]: MULAI - Fungsi JavaScript yang mengecek apakah Nama Pengaju kosong -->
+<!-- Validasi semua kolom wajib -->
 <script type="text/javascript">
     var toastTimer;
 
@@ -161,32 +173,94 @@
         document.getElementById("toast-message").textContent = message;
         document.getElementById("toast-notif").classList.add("show");
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(hideToast, 4000);
+        toastTimer = setTimeout(hideToast, 5000);
     }
 
     function hideToast() {
         document.getElementById("toast-notif").classList.remove("show");
     }
 
-    function validateForm() {
-        var input = document.getElementById("nama_pengaju");
-        if (input.value.trim() == "") {
-            showToast("Nama pengaju tidak boleh kosong.");
-            input.classList.add("input-error");
-            input.focus();
-            return false;
-        } else {
-            input.classList.remove("input-error");
-            return true;
-        }
+    // Daftar kolom wajib (id = nama field di BookingForm)
+    var REQUIRED_FIELDS = [
+        { id: "nama_pengaju",   label: "Nama pengaju" },
+        { id: "ruangan",        label: "Ruangan" },
+        { id: "no_telepon",     label: "No. telepon" },
+        { id: "kegiatan",       label: "Kegiatan" },
+        { id: "email",          label: "Email" },
+        { id: "status_pengaju", label: "Status pengaju" },
+        { id: "nim_nip",        label: "NIM / NIP" },
+        { id: "jenis_kelamin",  label: "Jenis kelamin" },
+        { id: "ktm",            label: "Upload KTM" },
+        { id: "start_time",     label: "Waktu mulai" },
+        { id: "end_time",       label: "Waktu selesai" }
+    ];
+
+    function isEmpty(el) {
+        if (el.type === "file") return !el.files || el.files.length === 0;
+        return el.value.trim() === "";
     }
 
-    // Hilangkan garis merah begitu pengguna mulai mengetik
-    document.getElementById("nama_pengaju").addEventListener("input", function () {
-        this.classList.remove("input-error");
+    function validateForm() {
+        var kosong = [];
+        var first = null;
+
+        REQUIRED_FIELDS.forEach(function (f) {
+            var el = document.getElementById(f.id);
+            if (!el) return;
+            if (isEmpty(el)) {
+                el.classList.add("input-error");
+                kosong.push(f.label);
+                if (!first) first = el;
+            } else {
+                el.classList.remove("input-error");
+            }
+        });
+
+        if (kosong.length) {
+            var msg = kosong.length === 1
+                ? kosong[0] + " tidak boleh kosong."
+                : "Mohon lengkapi: " + kosong.slice(0, 3).join(", ") +
+                  (kosong.length > 3 ? " dan " + (kosong.length - 3) + " kolom lainnya." : ".");
+            showToast(msg);
+            first.focus();
+            return false;
+        }
+
+        // Format yang sama dengan pengecekan di forms.py
+        var nim = document.getElementById("nim_nip");
+        var tel = document.getElementById("no_telepon");
+        var mail = document.getElementById("email");
+        var status = document.getElementById("status_pengaju");
+        var mulai = document.getElementById("start_time");
+        var selesai = document.getElementById("end_time");
+
+        function gagal(el, pesan) {
+            el.classList.add("input-error");
+            showToast(pesan);
+            el.focus();
+            return false;
+        }
+
+        if (!/^[0-9]+$/.test(nim.value.trim())) return gagal(nim, "NIM/NIP harus berupa angka.");
+        if (status.value === "Mahasiswa" && nim.value.trim().length !== 10) {
+            return gagal(nim, "NIM mahasiswa harus terdiri dari tepat 10 digit angka.");
+        }
+        if (!/^[0-9]+$/.test(tel.value.trim())) return gagal(tel, "Nomor telepon harus berupa angka.");
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail.value.trim())) return gagal(mail, "Format email tidak valid.");
+        if (selesai.value <= mulai.value) return gagal(selesai, "Waktu selesai harus setelah waktu mulai.");
+
+        return true;
+    }
+
+    // Hilangkan garis merah begitu pengguna mulai mengisi
+    REQUIRED_FIELDS.forEach(function (f) {
+        var el = document.getElementById(f.id);
+        if (!el) return;
+        ["input", "change"].forEach(function (ev) {
+            el.addEventListener(ev, function () { this.classList.remove("input-error"); });
+        });
     });
 </script>
-<!-- EXISTENCE CHECK: SELESAI -->
 
 
 
@@ -194,38 +268,59 @@
 
 
 <style>
-.container {
-    max-width: 700px;
-    background: white;
-    margin: 30px auto;
-    padding: 25px;
-    border-radius: 16px;
-    box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
+/* Kartu form, gaya sama dengan kartu panel admin */
+.ap .bk-card {
+    max-width: 860px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 12px 30px rgba(11, 46, 94, .08);
 }
 
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 12px;
+    gap: 18px 20px;
+    margin-bottom: 16px;
 }
 
 .form-group label {
     font-weight: 600;
-    color: #0b2d5c;
-    font-size: 14px;
+    color: #0b2e5e;
+    font-size: 13.5px;
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 7px;
+}
+
+.req {
+    color: #dc2626;
+    font-weight: 700;
+    margin-left: 2px;
 }
 
 .form-control {
     width: 100%;
-    padding: 9px 11px;
-    border-radius: 8px;
-    border: 1.6px solid #ddd;
-    background: #fdfaf4;
-    font-size: 14px;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1.6px solid #e0e5ee;
+    background: #fff;
+    font-family: inherit;
+    font-size: 14.5px;
+    color: #111827;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
 }
+
+.form-control::placeholder { color: #a0a8b8; }
+
+.form-control:focus {
+    border-color: #0b2e5e;
+    box-shadow: 0 0 0 4px rgba(11, 45, 92, .12);
+}
+
+textarea.form-control { min-height: 90px; resize: vertical; }
 
 .error-message {
     display: block;
@@ -234,23 +329,30 @@
     margin-top: 5px;
 }
 
-.btn-submit {
-    margin-top: 20px;
+.bk-submit {
+    margin-top: 12px;
     width: 100%;
-    background: #0b2d5c;
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    color: white;
+    padding: 14px;
+    border: 0;
+    border-radius: 14px;
+    background: #f5b52e;
+    color: #3b2a00;
+    font-family: inherit;
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 22px rgba(245, 181, 46, .35);
+    transition: transform .18s ease, box-shadow .18s ease;
 }
 
-.btn-submit:hover {
-    background: #08305e;
+.bk-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 26px rgba(245, 181, 46, .42);
 }
 
-/* ===== EXISTENCE CHECK: gaya notifikasi & kolom error ===== */
+.bk-submit:focus-visible { outline: 3px solid rgba(245, 181, 46, .8); outline-offset: 3px; }
+
+/* ===== Gaya notifikasi & kolom error ===== */
 .input-error {
     border: 1.6px solid #d93025 !important;
     box-shadow: 0 0 0 3px rgba(217, 48, 37, 0.15);
@@ -328,6 +430,8 @@
 }
 
 @media (max-width: 600px) {
+    .ap .bk-card { padding: 22px 16px; }
+
     .form-row {
         grid-template-columns: 1fr;
     }
