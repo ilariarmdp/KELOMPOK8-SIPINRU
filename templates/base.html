@@ -109,6 +109,7 @@
     }
 
     .menu-fab{
+      position:relative;
       flex-shrink:0;
       width:42px;height:42px;
       display:grid;place-items:center;
@@ -476,7 +477,7 @@
           <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">🏠 Homepage</a>
           <a href="{{ url_for('book_room') }}" class="{{ 'active' if request.endpoint=='book_room' }}">📝 Peminjaman</a>
           <a href="{{ url_for('jadwal') }}" class="{{ 'active' if request.endpoint=='jadwal' }}">📅 Jadwal</a>
-          <a href="{{ url_for('notifications') }}" class="{{ 'active' if request.endpoint=='notifications' }}">🔔 Notifikasi</a>
+          <a href="{{ url_for('notifications') }}" class="{{ 'active' if request.endpoint=='notifications' }}">🔔 Notifikasi <span class="nav-badge js-notif" {% if not nav_notifications %}hidden{% endif %}>{{ (nav_notifications|length) if (nav_notifications|length) < 100 else '99+' }}</span></a>
           <hr>
           <a href="{{ url_for('logout') }}">↩️ Logout</a>
 
@@ -581,6 +582,46 @@
         .catch(function () {});
     }
     setInterval(poll, 30000);
+  })();
+  </script>
+  {% endif %}
+
+  {% if current_user.is_authenticated and current_user.role not in ('admin', 'fakultas') %}
+  <div id="user-poll" hidden
+      data-url="{{ url_for('notifications_count') }}"
+      data-target="{{ url_for('notifications') }}"></div>
+  <script>
+  (function () {
+    var box = document.getElementById('user-poll');
+
+    // Ubah semua bulatan merah notifikasi (dock, sidebar) sekaligus
+    function paint(n) {
+      document.querySelectorAll('.js-notif').forEach(function (b) {
+        b.textContent = n > 99 ? '99+' : n;
+        b.hidden = !n;
+      });
+    }
+
+    // Ambil angka terbaru dari server
+    function refresh() {
+      fetch(box.dataset.url, { credentials: 'same-origin', cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) { if (d) paint(d.count); })
+        .catch(function () {});
+    }
+
+    // Klik lonceng / menu Notifikasi: badge langsung hilang
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest('a[href="' + box.dataset.target + '"]');
+      if (a) paint(0);
+    });
+
+    // Kembali ke halaman ini (tombol Back / pindah tab): ambil angka terbaru
+    window.addEventListener('pageshow', function (e) { if (e.persisted) refresh(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+
+    // Cek berkala: badge muncul sendiri begitu fakultas menyetujui
+    setInterval(refresh, 30000);
   })();
   </script>
   {% endif %}

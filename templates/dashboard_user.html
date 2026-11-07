@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
+{# jumlah notifikasi baru (sudah disetujui admin DAN fakultas, belum dibaca): dari context processor di app.py #}
+{% set notif_n = (nav_notifications|length) if nav_notifications else 0 %}
 
 <style>
   /* Semua style di-scope ke .ad-dash / .ad-dock supaya tidak mengganggu base.html */
@@ -189,6 +191,7 @@
   @keyframes dkInX { from { opacity: 0; transform: translateX(-90px); } }
   @keyframes dkInY { from { opacity: 0; transform: translateY(90px); } }
   @keyframes dkPop { 0% { transform: scale(1); } 45% { transform: scale(1.3) rotate(-8deg); } 100% { transform: scale(1.12); } }
+  @keyframes dkBadge { 0% { box-shadow: 0 0 0 2px #fff, 0 0 0 2px rgba(225,29,72,.55); } 70% { box-shadow: 0 0 0 2px #fff, 0 0 0 9px rgba(225,29,72,0); } 100% { box-shadow: 0 0 0 2px #fff, 0 0 0 2px rgba(225,29,72,0); } }
 
   .ad-dock {
     position: fixed; left: 14px; top: 110px; bottom: 0; margin: auto 0; height: fit-content; z-index: 30;
@@ -217,6 +220,15 @@
     filter: drop-shadow(0 3px 4px rgba(11,46,94,.22));
   }
   .ad-dock .dk:hover .dk-ic { animation: dkPop .45s ease forwards; }
+
+  /* Bulatan merah notifikasi di lonceng */
+  .ad-dock .dk-badge {
+    position: absolute; top: -5px; right: -5px; min-width: 21px; height: 21px; padding: 0 6px; display: grid; place-items: center;
+    border-radius: 999px; background: #e11d48; color: #fff; font-size: 11px; font-weight: 700; line-height: 1;
+    animation: dkBadge 2.4s ease-out infinite;
+  }
+  .ad-dock .dk-badge[hidden] { display: none; }
+
   .ad-dock .dk-tip {
     position: absolute; left: calc(100% + 18px); top: 50%; padding: 8px 14px; border-radius: 12px;
     background: #0b2e5e; color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap;
@@ -266,8 +278,10 @@
   <a href="{{ url_for('book_room') }}" class="dk" aria-label="Ajukan Peminjaman">
     <span class="dk-ic" aria-hidden="true">📝</span><span class="dk-tip">Ajukan Peminjaman</span>
   </a>
-  <a href="{{ url_for('notifications') }}" class="dk" aria-label="Notifikasi">
-    <span class="dk-ic" aria-hidden="true">🔔</span><span class="dk-tip">Notifikasi</span>
+  <a href="{{ url_for('notifications') }}" class="dk" aria-label="Notifikasi{% if notif_n %} ({{ notif_n }} baru){% endif %}">
+    <span class="dk-ic" aria-hidden="true">🔔</span>
+    <span class="dk-badge js-notif" {% if not notif_n %}hidden{% endif %}>{{ '99+' if notif_n > 99 else notif_n }}</span>
+    <span class="dk-tip">Notifikasi</span>
   </a>
   <a href="{{ url_for('jadwal') }}" class="dk" aria-label="Jadwal Ruangan">
     <span class="dk-ic" aria-hidden="true">📆</span><span class="dk-tip">Jadwal Ruangan</span>

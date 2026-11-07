@@ -90,6 +90,15 @@ def forbidden(_e):
     flash("Akses ditolak. Kamu tidak memiliki izin ke halaman tersebut.", "danger")
     return redirect(url_for('dashboard'))
 
+# Halaman setelah login jangan disimpan di cache browser, supaya bulatan merah
+# notifikasi selalu terbaru saat user menekan tombol Back atau pindah halaman.
+@app.after_request
+def no_cache_halaman_login(response):
+    if current_user.is_authenticated and response.mimetype == 'text/html':
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+    return response
+
 #Helper: daftar ruangan urut abjad (paham angka: "Lab 2" sebelum "Lab 10")
 def kunci_abjad(room):
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', room.name or '')]
@@ -285,6 +294,12 @@ def book_room():
 @login_required
 def notifications():
     bookings = Booking.query.filter_by(user_id=current_user.id).order_by(Booking.start_time.desc()).all()
+
+    # Tandai semua notifikasi sudah dibaca saat halaman dibuka,
+    # supaya bulatan merah di lonceng hilang.
+    Booking.query.filter_by(user_id=current_user.id, is_read=False).update({'is_read': True})
+    db.session.commit()
+
     return render_template('notifications.html', bookings=bookings, title="Notifikasi")
 
 @app.route('/mark_as_read/<int:booking_id>')
@@ -296,6 +311,18 @@ def mark_as_read(booking_id):
         db.session.commit()
         flash("Notifikasi sudah ditandai sebagai dibaca.", "info")
     return redirect(url_for('notifications'))
+
+# Jumlah notifikasi baru (disetujui admin DAN fakultas, belum dibaca).
+# Dipakai JavaScript untuk memperbarui bulatan merah tanpa reload halaman.
+@app.route('/notifications/count')
+@login_required
+def notifications_count():
+    if current_user.role in ('admin', 'fakultas'):
+        return jsonify(count=0)
+    n = Booking.query.filter_by(
+        user_id=current_user.id, is_read=False, status='approved'
+    ).count()
+    return jsonify(count=n)
 
 #PANEL ADMIN / DATA PENGAJUAN
 @app.route('/admin', methods=['GET', 'POST'])
@@ -383,11 +410,14 @@ def laporan_peminjaman():
 #NOTIFIKASI NAVBAR
 @app.context_processor
 def inject_notifications():
-    # Admin: tidak perlu notifikasi user
+    # Admin & fakultas: tidak perlu notifikasi user
     if current_user.is_authenticated and getattr(current_user, "role", "") not in ('admin', 'fakultas'):
+        # Bulatan merah di lonceng HANYA untuk pengajuan yang sudah
+        # disetujui admin DAN fakultas (status 'approved') dan belum dibaca.
         notifications = Booking.query.filter_by(
             user_id=current_user.id,
-            is_read=False
+            is_read=False,
+            status='approved'
         ).order_by(Booking.start_time.desc()).all()
         return dict(nav_notifications=notifications)
     return dict(nav_notifications=[])

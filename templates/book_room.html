@@ -8,7 +8,8 @@
 
 <!-- ================== BAGIAN SOURCE CODE ============== -->
 
-<div class="ap">
+<!-- ap-narrow: membatasi lebar halaman & menengahkannya (header + kartu sejajar) -->
+<div class="ap ap-narrow">
 
     <header class="ap-top">
         <span class="ap-tag"><i></i> Panel User</span>
@@ -268,9 +269,20 @@
 
 
 <style>
+/* Halaman form: lebar dibatasi lalu ditengahkan.
+   width:100% penting karena <body> memakai display:flex (column),
+   tanpa itu elemen dengan margin auto menyusut mengikuti isinya. */
+.ap.ap-narrow {
+    width: 100%;
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* Kartu form, gaya sama dengan kartu panel admin */
 .ap .bk-card {
-    max-width: 860px;
+    width: 100%;
+    margin: 0 auto;
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 24px;
