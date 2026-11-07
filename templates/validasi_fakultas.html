@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% macro ico(name) -%}
+<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if name == 'room' %}<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M10 21v-4h4v4"/>
+{%- elif name == 'cal' %}<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>
+{%- elif name == 'clock' %}<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+{%- elif name == 'file' %}<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>
+{%- elif name == 'note' %}<path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+{%- elif name == 'eye' %}<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>
+{%- elif name == 'down' %}<path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/>
+{%- elif name == 'check' %}<path d="m5 12.5 4.5 4.5L19 7.5"/>
+{%- elif name == 'x' %}<path d="m6 6 12 12M18 6 6 18"/>
+{%- elif name == 'search' %}<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+{%- endif %}
+</svg>
+{%- endmacro %}
+
+<div class="fkv">
+
+  <header class="fkv-head">
+    <div>
+      <span class="fkv-eyebrow"><i></i> Panel Fakultas</span>
+      <h2>Validasi Pengajuan</h2>
+      <p>Pengajuan berikut sudah disetujui admin prodi dan menunggu keputusan fakultas.</p>
+    </div>
+    <div class="fkv-tools">
+      <span class="fkv-count"><b data-count="{{ data|length }}">{{ data|length }}</b> menunggu</span>
+      <label class="fkv-search">
+        {{ ico('search') }}
+        <input type="text" id="fkvSearch" placeholder="Cari nama, ruangan, kegiatan..." autocomplete="off">
+      </label>
+    </div>
+  </header>
+
+  <div class="fkv-list" id="fkvList">
+    {% for item in data %}
+    <article class="fkv-card" style="--i: {{ loop.index0 }}" data-kegiatan="{{ item.kegiatan }}"
+             data-search="{{ item.nama_pengaju }} {{ item.room.name if item.room else '' }} {{ item.kegiatan }}">
+
+      <div class="fkv-col fkv-person">
+        <span class="fkv-avatar">{{ (item.nama_pengaju or '?')[0]|upper }}</span>
+        <div>
+          <div class="fkv-name">{{ item.nama_pengaju }}</div>
+          <div class="fkv-kegiatan">{{ item.kegiatan }}</div>
+        </div>
+      </div>
+
+      <div class="fkv-col fkv-info">
+        <div class="fkv-row">{{ ico('room') }}<span>{{ item.room.name if item.room else '-' }}</span></div>
+        <div class="fkv-row">{{ ico('cal') }}<span>{{ item.start_time.strftime('%d-%m-%Y') }}</span></div>
+        <div class="fkv-row">{{ ico('clock') }}<span>{{ item.start_time.strftime('%H:%M') }} - {{ item.end_time.strftime('%H:%M') }}</span></div>
+      </div>
+
+      <div class="fkv-col fkv-docs">
+        {% if item.ktm %}
+        <div class="fkv-file">
+          <span class="fkv-file-name">{{ ico('file') }} KTM</span>
+          <a class="fkv-chip" href="{{ url_for('berkas', filename=item.ktm) }}" target="_blank">{{ ico('eye') }} Buka</a>
+          <a class="fkv-chip" href="{{ url_for('berkas', filename=item.ktm, download=1) }}">{{ ico('down') }} Unduh</a>
+        </div>
+        {% endif %}
+        {% if item.surat_izin %}
+        <div class="fkv-file">
+          <span class="fkv-file-name">{{ ico('file') }} SIK</span>
+          <a class="fkv-chip" href="{{ url_for('berkas', filename=item.surat_izin) }}" target="_blank">{{ ico('eye') }} Buka</a>
+          <a class="fkv-chip" href="{{ url_for('berkas', filename=item.surat_izin, download=1) }}">{{ ico('down') }} Unduh</a>
+        </div>
+        {% endif %}
+        <div class="fkv-note">{{ ico('note') }}<span>{{ item.notes if item.notes else 'Tidak ada catatan' }}</span></div>
+      </div>
+
+      <form method="post" class="fkv-col fkv-actions">
+        <input type="hidden" name="booking_id" value="{{ item.id }}">
+        <input type="hidden" name="action" value="">
+        <button type="button" class="fkv-btn fkv-ok" data-act="approve">{{ ico('check') }} Setujui</button>
+        <button type="button" class="fkv-btn fkv-no" data-act="reject">{{ ico('x') }} Tolak</button>
+      </form>
+    </article>
+    {% else %}
+    <div class="fkv-empty">
+      <div class="fkv-empty-ic">{{ ico('check') }}</div>
+      <h3>Semua sudah divalidasi</h3>
+      <p>Belum ada pengajuan yang menunggu keputusan fakultas.</p>
+    </div>
+    {% endfor %}
+
+    <div class="fkv-empty" id="fkvNoResult" hidden>
+      <div class="fkv-empty-ic">{{ ico('search') }}</div>
+      <h3>Tidak ditemukan</h3>
+      <p>Coba kata kunci lain.</p>
+    </div>
+  </div>
+</div>
+
+{# ===== Modal konfirmasi ===== #}
+<div class="fkv-modal" id="fkvModal" hidden>
+  <div class="fkv-dialog" role="dialog" aria-modal="true">
+    <div class="fkv-dialog-ic" id="fkvDlgIc"></div>
+    <h3 id="fkvDlgTitle"></h3>
+    <p id="fkvDlgDesc"></p>
+    <div class="fkv-dialog-btn">
+      <button type="button" class="fkv-btn fkv-cancel" id="fkvCancel">Batal</button>
+      <button type="button" class="fkv-btn" id="fkvConfirm">Ya, lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.fkv { --navy:#0b2d5c; --yellow:#ffe995; --green:#137a2a; --green-bg:#b8f5c7; --red:#b30000; --red-bg:#ffd6d6;
+       --line:#e8ecf3; --muted:#5b6577; max-width:1180px; margin:0 auto; padding:10px 6px 40px; color:#1f2937; }
+.fkv .ic { width:16px; height:16px; flex:none; }
+
+@keyframes fkvUp   { from { opacity:0; transform:translateY(24px) scale(.985); } to { opacity:1; transform:none; } }
+@keyframes fkvPing { 0% { box-shadow:0 0 0 0 rgba(34,160,90,.55); } 70% { box-shadow:0 0 0 9px rgba(34,160,90,0); } 100% { box-shadow:0 0 0 0 rgba(34,160,90,0); } }
+@keyframes fkvShine{ from { transform:translateX(-130%) skewX(-20deg); } to { transform:translateX(330%) skewX(-20deg); } }
+@keyframes fkvPop  { from { opacity:0; transform:scale(.88) translateY(14px); } to { opacity:1; transform:none; } }
+@keyframes fkvFade { from { opacity:0; } to { opacity:1; } }
+@keyframes fkvFloat{ 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
+
+/* ---- Header ---- */
+.fkv-head { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap;
+            margin-bottom:26px; animation:fkvUp .7s cubic-bezier(.2,.7,.2,1) backwards; }
+.fkv-eyebrow { display:inline-flex; align-items:center; gap:8px; padding:5px 13px; border-radius:999px;
+               background:#e8f0fb; color:var(--navy); font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+.fkv-eyebrow i { width:8px; height:8px; border-radius:50%; background:#22a05a; animation:fkvPing 2s infinite; }
+.fkv-head h2 { margin:12px 0 4px; font-size:clamp(26px,3.4vw,34px); font-weight:700; color:var(--navy); }
+.fkv-head p { margin:0; color:var(--muted); font-size:15px; max-width:520px; }
+.fkv-tools { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.fkv-count { padding:9px 16px; border-radius:999px; background:var(--yellow); color:var(--navy); font-size:14px; font-weight:600; }
+.fkv-count b { font-size:16px; }
+.fkv-search { display:flex; align-items:center; gap:9px; padding:0 14px; height:42px; min-width:260px;
+              background:#fff; border:1.6px solid var(--line); border-radius:999px; color:var(--muted);
+              transition:border-color .2s, box-shadow .2s; }
+.fkv-search:focus-within { border-color:var(--navy); box-shadow:0 0 0 4px rgba(11,45,92,.12); }
+.fkv-search input { flex:1; border:0; outline:0; background:none; font:inherit; font-size:14px; color:#1f2937; }
+
+/* ---- Kartu ---- */
+.fkv-list { display:flex; flex-direction:column; gap:16px; }
+.fkv-card { position:relative; overflow:hidden; display:grid; grid-template-columns:1.2fr 1fr 1.7fr auto; gap:22px; align-items:center;
+            padding:20px 24px 20px 28px; background:#fff; border:1px solid var(--line); border-radius:20px;
+            box-shadow:0 6px 18px rgba(11,45,92,.06);
+            animation:fkvUp .7s cubic-bezier(.2,.7,.2,1) backwards; animation-delay:calc(var(--i) * .09s + .15s);
+            transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease, opacity .35s ease; }
+.fkv-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:5px;
+                    background:linear-gradient(180deg,#f5b52e,var(--navy)); transition:width .25s ease; }
+.fkv-card:hover { transform:translateY(-4px); box-shadow:0 18px 36px rgba(11,45,92,.14); border-color:rgba(11,45,92,.25); }
+.fkv-card:hover::before { width:8px; }
+.fkv-card.leaving { opacity:0; transform:translateX(60px) scale(.96); }
+.fkv-card[hidden] { display:none; }
+
+.fkv-person { display:flex; align-items:center; gap:14px; min-width:0; }
+.fkv-avatar { flex:none; width:50px; height:50px; display:grid; place-items:center; border-radius:16px;
+              background:linear-gradient(135deg,#0b2d5c,#1d5aa3); color:#fff; font-size:20px; font-weight:700;
+              box-shadow:0 8px 16px rgba(11,45,92,.25); transition:transform .3s ease; }
+.fkv-card:hover .fkv-avatar { transform:rotate(-6deg) scale(1.08); }
+.fkv-name { font-weight:700; color:var(--navy); font-size:16px; line-height:1.3; }
+.fkv-kegiatan { margin-top:2px; font-size:13.5px; color:var(--muted); word-break:break-word; }
+
+.fkv-info { display:flex; flex-direction:column; gap:8px; }
+.fkv-row { display:flex; align-items:center; gap:10px; font-size:14px; color:#374151; }
+.fkv-row .ic { color:var(--navy); }
+
+.fkv-docs { display:flex; flex-direction:column; gap:8px; min-width:0; }
+.fkv-file { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.fkv-file-name { display:inline-flex; align-items:center; gap:6px; min-width:62px; font-size:13px; font-weight:700; color:var(--navy); }
+.fkv-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; background:#e6f3ff; color:#0a4a82;
+            font-size:12.5px; font-weight:600; text-decoration:none; transition:background .2s, color .2s, transform .2s; }
+.fkv-chip:hover { background:var(--navy); color:#fff; transform:translateY(-2px); }
+.fkv-note { display:flex; gap:9px; align-items:flex-start; padding:9px 12px; border-radius:12px; background:#fffaf0;
+            border:1px dashed #f0d58a; font-size:13.5px; color:#5a4a1a; line-height:1.5; word-break:break-word; }
+.fkv-note .ic { margin-top:3px; color:#c58a00; }
+
+/* ---- Tombol aksi ---- */
+.fkv-actions { display:flex; flex-direction:column; gap:9px; margin:0; }
+.fkv-btn { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; gap:7px;
+           min-width:128px; padding:10px 18px; border:0; border-radius:14px; cursor:pointer; font:inherit; font-size:14px; font-weight:700;
+           transition:transform .2s ease, box-shadow .2s ease, background .2s ease; }
+.fkv-btn:hover { transform:translateY(-2px); }
+.fkv-btn:active { transform:scale(.97); }
+.fkv-ok { background:var(--green-bg); color:var(--green); }
+.fkv-ok:hover { background:#22a05a; color:#fff; box-shadow:0 10px 20px rgba(34,160,90,.3); }
+.fkv-no { background:#fff; color:var(--red); box-shadow:inset 0 0 0 1.6px #f3b4b4; }
+.fkv-no:hover { background:#e11d48; color:#fff; box-shadow:0 10px 20px rgba(225,29,72,.28); }
+.fkv-ok::after { content:""; position:absolute; top:0; left:0; width:35%; height:100%;
+                 background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);
+                 transform:translateX(-130%) skewX(-20deg); animation:fkvShine 4.5s ease-in-out 1.5s infinite; }
+
+/* ---- Kosong ---- */
+.fkv-empty { padding:54px 20px; text-align:center; background:#fff; border:1px dashed #cfd6e4; border-radius:22px;
+             animation:fkvUp .7s ease backwards; }
+.fkv-empty[hidden] { display:none; }
+.fkv-empty-ic { width:68px; height:68px; margin:0 auto 14px; display:grid; place-items:center; border-radius:22px;
+                background:var(--yellow); color:var(--navy); animation:fkvFloat 4s ease-in-out infinite; }
+.fkv-empty-ic .ic { width:32px; height:32px; }
+.fkv-empty h3 { margin:0 0 4px; color:var(--navy); font-size:19px; }
+.fkv-empty p { margin:0; color:var(--muted); font-size:14px; }
+
+/* ---- Modal ---- */
+.fkv-modal { position:fixed; inset:0; z-index:2000; display:grid; place-items:center; padding:20px;
+             background:rgba(11,45,92,.45); backdrop-filter:blur(5px); animation:fkvFade .25s ease; }
+.fkv-modal[hidden] { display:none; }
+.fkv-dialog { width:min(400px,100%); padding:30px 26px 24px; text-align:center; background:#fff; border-radius:24px;
+              box-shadow:0 30px 60px rgba(0,0,0,.28); animation:fkvPop .35s cubic-bezier(.2,.9,.3,1.2); }
+.fkv-dialog-ic { width:62px; height:62px; margin:0 auto 14px; display:grid; place-items:center; border-radius:50%; }
+.fkv-dialog-ic .ic { width:30px; height:30px; }
+.fkv-dialog h3 { margin:0 0 6px; font-size:20px; color:var(--navy); }
+.fkv-dialog p { margin:0 0 22px; font-size:14.5px; color:var(--muted); line-height:1.6; }
+.fkv-dialog-btn { display:flex; gap:10px; justify-content:center; }
+.fkv-cancel { background:#eef1f6; color:#374151; }
+.fkv-cancel:hover { background:#e2e7f0; }
+.fkv-go-ok { background:#22a05a; color:#fff; }
+.fkv-go-no { background:#e11d48; color:#fff; }
+.is-ok .fkv-dialog-ic { background:var(--green-bg); color:var(--green); }
+.is-no .fkv-dialog-ic { background:var(--red-bg); color:#e11d48; }
+
+/* ---- Responsif ---- */
+@media (max-width:1000px) {
+  .fkv-card { grid-template-columns:1fr 1fr; }
+  .fkv-actions { flex-direction:row; grid-column:1 / -1; }
+  .fkv-actions .fkv-btn { flex:1; }
+}
+@media (max-width:620px) {
+  .fkv-card { grid-template-columns:1fr; padding:18px 18px 18px 24px; }
+  .fkv-search { min-width:0; width:100%; }
+  .fkv-tools { width:100%; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .fkv *, .fkv *::before, .fkv *::after, .fkv-modal, .fkv-modal * { animation:none !important; transition:none !important; }
+}
+</style>
+
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Angka hitung naik
+  var cnt = document.querySelector(".fkv-count b");
+  if (cnt && !reduce) {
+    var target = parseInt(cnt.getAttribute("data-count"), 10) || 0, t0 = null;
+    if (target > 0) {
+      cnt.textContent = "0";
+      (function step(ts) {
+        if (!t0) t0 = ts;
+        var p = Math.min((ts - t0) / 800, 1);
+        cnt.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(step);
+      })(performance.now());
+    }
+  }
+
+  // Pencarian
+  var input = document.getElementById("fkvSearch");
+  var cards = document.querySelectorAll(".fkv-card");
+  var noRes = document.getElementById("fkvNoResult");
+  if (input) input.addEventListener("input", function () {
+    var q = input.value.trim().toLowerCase(), shown = 0;
+    cards.forEach(function (c) {
+      var ok = c.getAttribute("data-search").toLowerCase().indexOf(q) !== -1;
+      c.hidden = !ok;
+      if (ok) shown++;
+    });
+    if (noRes) noRes.hidden = !(cards.length && shown === 0);
+  });
+
+  // Modal konfirmasi
+  var modal = document.getElementById("fkvModal");
+  var dlg = modal.querySelector(".fkv-dialog");
+  var ic = document.getElementById("fkvDlgIc");
+  var title = document.getElementById("fkvDlgTitle");
+  var desc = document.getElementById("fkvDlgDesc");
+  var confirmBtn = document.getElementById("fkvConfirm");
+  var cur = null;
+
+  var ICON_OK = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+  var ICON_NO = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+
+  function closeModal() { modal.hidden = true; cur = null; }
+
+  document.querySelectorAll("[data-act]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var card = btn.closest(".fkv-card");
+      var approve = btn.getAttribute("data-act") === "approve";
+      cur = { form: btn.closest("form"), card: card, act: btn.getAttribute("data-act") };
+      var nama = card.getAttribute("data-kegiatan");
+      dlg.className = "fkv-dialog " + (approve ? "is-ok" : "is-no");
+      ic.innerHTML = approve ? ICON_OK : ICON_NO;
+      title.textContent = approve ? "Setujui pengajuan?" : "Tolak pengajuan?";
+      desc.textContent = (approve ? "Pengajuan \"" + nama + "\" akan disetujui dan masuk ke jadwal ruangan."
+                                  : "Pengajuan \"" + nama + "\" akan ditolak dan mahasiswa akan diberi tahu.");
+      confirmBtn.className = "fkv-btn " + (approve ? "fkv-go-ok" : "fkv-go-no");
+      modal.hidden = false;
+      confirmBtn.focus();
+    });
+  });
+
+  confirmBtn.addEventListener("click", function () {
+    if (!cur) return;
+    var f = cur.form, card = cur.card;
+    f.querySelector('input[name="action"]').value = cur.act;
+    modal.hidden = true;
+    card.classList.add("leaving");
+    setTimeout(function () { f.submit(); }, reduce ? 0 : 380);
+  });
+
+  document.getElementById("fkvCancel").addEventListener("click", closeModal);
+  modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+})();
+</script>
+
+{% endblock %}

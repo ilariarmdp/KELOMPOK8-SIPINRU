@@ -1,9 +1,10 @@
 import os
+import re
 from datetime import datetime
 from functools import wraps
 
 import click
-from flask import Flask, render_template, redirect, url_for, flash, request, abort
+from flask import Flask, render_template, redirect, url_for, flash, request, abort, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
@@ -13,8 +14,9 @@ from config import Config
 from forms import RegisterForm, LoginForm, BookingForm, RuanganForm
 from models import db, User, Room, Booking
 from ruangan_service import RuanganService, RuanganError
+from validasi_service import AdminValidasiService, FakultasValidasiService, ValidasiError
 
-VALID_LOGIN_MODES = {"admin", "user"}
+VALID_LOGIN_MODES = {"admin", "user", "fakultas"}
 FLASH_SUCCESS = "success"
 FLASH_DANGER = "danger"
 
@@ -26,6 +28,8 @@ app.config.from_object(Config)
 db.init_app(app)
 migrate = Migrate(app, db)
 ruangan_service = RuanganService()
+admin_validasi = AdminValidasiService()
+fakultas_validasi = FakultasValidasiService()
 
 # Konstanta Status Booking
 STATUS_PENDING = 'pending'
@@ -42,6 +46,10 @@ login_manager.login_message_category = "warning"
 UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+PROFIL_FOLDER = os.path.join(UPLOAD_FOLDER, 'profil')
+os.makedirs(PROFIL_FOLDER, exist_ok=True)
+FOTO_EXT = {'jpg', 'jpeg', 'png', 'webp'}
+FOTO_MAX = 1 * 1024 * 1024  # 1 MB
 
 #Serializer Token Reset Password
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -103,6 +111,18 @@ def init_db():
         click.echo("Database berhasil diinisialisasi!")
 
 
+@app.cli.command("create-fakultas")
+def create_fakultas():
+    if User.query.filter_by(username='fakultas').first():
+        click.echo("Akun fakultas sudah ada.")
+        return
+    u = User(username='fakultas', email='fakultas@unjani.ac.id', role='fakultas')
+    u.set_password('fakultas123')
+    db.session.add(u)
+    db.session.commit()
+    click.echo("Akun fakultas dibuat (fakultas@unjani.ac.id / fakultas123)")
+
+
 #ROUTES / RUTE WEB
 
 @app.route('/')
@@ -143,7 +163,7 @@ def authenticate_user(email, password):
         return user
     return None
 
-# LOGIN (support mode admin/user untuk menampilkan form langsung)
+# LOGIN (support mode admin/user/fakultas untuk menampilkan form langsung)
 @app.route('/login', defaults={'mode': None}, methods=['GET', 'POST'])
 @app.route('/login/<mode>', methods=['GET', 'POST'])
 def login(mode):
@@ -156,11 +176,14 @@ def login(mode):
     form = LoginForm()
     if request.method == 'POST' and form.validate_on_submit():
         user = authenticate_user(form.email.data, form.password.data)
-        if user:
+        if user and is_valid_mode and user.role != login_mode:
+            flash(f"Akun ini bukan akun {login_mode}. Gunakan tombol login yang sesuai.", FLASH_DANGER)
+        elif user:
             login_user(user)
             flash(f"Selamat datang, {user.username}!", FLASH_SUCCESS)
             return redirect_to_dashboard()
-        flash('Email atau password salah. Mohon coba lagi', FLASH_DANGER)
+        else:
+            flash('Email atau password salah. Mohon coba lagi', FLASH_DANGER)
 
     return render_template('login.html', form=form, title="Login", show_form=is_valid_mode, mode=login_mode)
 
@@ -177,9 +200,10 @@ def logout():
 def dashboard():
     if current_user.role == 'admin':
         return render_template('dashboard_admin.html')
-    else:
-        rooms = Room.query.all()
-        return render_template('dashboard_user.html', rooms=rooms)
+    if current_user.role == 'fakultas':
+        return render_template('dashboard_fakultas.html')
+    rooms = Room.query.all()
+    return render_template('dashboard_user.html', rooms=rooms)
 
 #PEMINJAMAN RUANGAN (untuk user)
 @app.route('/book', methods=['GET', 'POST'])
@@ -262,37 +286,21 @@ def mark_as_read(booking_id):
 @login_required
 @role_required('admin')
 def admin():
-    bookings = Booking.query.order_by(Booking.start_time.desc()).all()
-
     if request.method == 'POST':
-        booking_id = request.form.get('booking_id', type=int)
-        action = request.form.get('action')
-        booking = db.session.get(Booking, booking_id) if booking_id else None
-
-        if booking and booking.status == STATUS_PENDING:
-            try:
-                if action == 'approve':
-                    booking.set_status(STATUS_APPROVED)
-                    booking.is_read = False
-
-                elif action == 'reject':
-                    booking.set_status(STATUS_REJECTED)
-                    booking.is_read = False
-
-                db.session.commit()
-
-            except ValueError as e:
-                db.session.rollback()
-                flash(str(e), 'danger')
-
+        try:
+            admin_validasi.proses(request.form.get('booking_id', type=int),
+                                  request.form.get('action'))
+        except ValidasiError as e:
+            db.session.rollback()
+            flash(str(e), 'danger')
         return redirect(url_for('admin'))
 
+    bookings = Booking.query.order_by(Booking.start_time.desc()).all()
     return render_template(
         'data_pengajuan.html',
         data=bookings,
         title="Validasi Data Pengajuan"
     )
-
 
 #Alias URL khusus data pengajuan
 @app.route('/data_pengajuan')
@@ -338,13 +346,24 @@ def laporan_peminjaman():
 @app.context_processor
 def inject_notifications():
     # Admin: tidak perlu notifikasi user
-    if current_user.is_authenticated and getattr(current_user, "role", "") != 'admin':
+    if current_user.is_authenticated and getattr(current_user, "role", "") not in ('admin', 'fakultas'):
         notifications = Booking.query.filter_by(
             user_id=current_user.id,
             is_read=False
         ).order_by(Booking.start_time.desc()).all()
         return dict(nav_notifications=notifications)
     return dict(nav_notifications=[])
+
+#DATA RINGKASAN & BADGE (khusus fakultas)
+@app.context_processor
+def inject_fakultas_counts():
+    if current_user.is_authenticated and getattr(current_user, "role", "") == 'fakultas':
+        pending = Booking.query.filter_by(status='approved_admin').count()
+        approved = Booking.query.filter_by(status='approved').count()
+        rejected = Booking.query.filter_by(status='rejected_fakultas').count()
+        return dict(pending_count=pending, notif_count=pending,
+                    approved_count=approved, rejected_count=rejected)
+    return {}
 
 #FORGOT PASSWORD
 @app.route('/forgot-password', methods=['GET', 'POST'])
@@ -512,10 +531,252 @@ def tambah_ruangan():
 
     return render_template('ruangan_edit.html', form=form, title="Tambah Ruangan")
 
-#RUN APP
+# =========================
+# FAKULTAS
+# =========================
+@app.route('/fakultas/validasi', methods=['GET', 'POST'])
+@login_required
+@role_required('fakultas')
+def fakultas_validasi_page():
+    if request.method == 'POST':
+        try:
+            fakultas_validasi.proses(request.form.get('booking_id', type=int),
+                                     request.form.get('action'))
+            flash("Validasi berhasil disimpan.", "success")
+        except ValidasiError as e:
+            db.session.rollback()
+            flash(str(e), 'danger')
+        return redirect(url_for('fakultas_validasi_page'))
+
+    return render_template('validasi_fakultas.html',
+                           data=fakultas_validasi.antrean(),
+                           title="Validasi Fakultas")
+
+
+@app.route('/fakultas/notifikasi')
+@login_required
+@role_required('fakultas')
+def fakultas_notifikasi():
+    bookings = (Booking.query
+                .filter(Booking.status.in_(['approved_admin', 'approved', 'rejected_fakultas']))
+                .order_by(Booking.start_time.desc())
+                .all())
+    return render_template('notifications_fakultas.html',
+                           bookings=bookings, title="Notifikasi Fakultas")
+
+# =========================
+# BERKAS (KTM & SURAT IZIN): buka / unduh
+# =========================
+@app.route('/berkas/<path:filename>')
+@login_required
+def berkas(filename):
+    safe_name = secure_filename(filename)
+    booking = Booking.query.filter(
+        (Booking.ktm == safe_name) | (Booking.surat_izin == safe_name)
+    ).first_or_404()
+
+    # admin & fakultas boleh semua; mahasiswa hanya berkas miliknya
+    if current_user.role not in ('admin', 'fakultas') and booking.user_id != current_user.id:
+        abort(403)
+
+    unduh = request.args.get('download') == '1'
+    return send_from_directory(app.config['UPLOAD_FOLDER'], safe_name, as_attachment=unduh)
+
+
+# =========================
+# PROFIL (semua role)
+# =========================
+def hitung_ringkasan(user):
+    """Tiga angka ringkas di kartu profil, berbeda tiap role."""
+    if user.role == 'admin':
+        return [
+            ('Perlu divalidasi', Booking.query.filter_by(status='pending').count()),
+            ('Diteruskan ke fakultas', Booking.query.filter(
+                Booking.status.in_(['approved_admin', 'approved', 'rejected_fakultas'])).count()),
+            ('Ditolak', Booking.query.filter_by(status='rejected').count()),
+        ]
+    if user.role == 'fakultas':
+        return [
+            ('Menunggu validasi', Booking.query.filter_by(status='approved_admin').count()),
+            ('Disetujui', Booking.query.filter_by(status='approved').count()),
+            ('Ditolak', Booking.query.filter_by(status='rejected_fakultas').count()),
+        ]
+    mine = Booking.query.filter_by(user_id=user.id)
+    return [
+        ('Total pengajuan', mine.count()),
+        ('Disetujui', mine.filter_by(status='approved').count()),
+        ('Sedang diproses', mine.filter(Booking.status.in_(['pending', 'approved_admin'])).count()),
+    ]
+
+
+def hapus_file_foto(user):
+    if user.foto:
+        lama = os.path.join(PROFIL_FOLDER, user.foto)
+        if os.path.isfile(lama):
+            os.remove(lama)
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    user = db.session.get(User, current_user.id)
+
+    if request.method == 'POST':
+        aksi = request.form.get('aksi')
+
+        if aksi == 'data':
+            nama = (request.form.get('nama_lengkap') or '').strip()
+            hp = (request.form.get('no_hp') or '').strip()
+            if not nama:
+                flash('Nama lengkap wajib diisi.', 'danger')
+            elif hp and not re.fullmatch(r'[0-9+\-\s]{8,20}', hp):
+                flash('Nomor HP tidak valid.', 'danger')
+            else:
+                user.nama_lengkap = nama[:150]
+                user.nim_nip = (request.form.get('nim_nip') or '').strip()[:50] or None
+                user.prodi = (request.form.get('prodi') or '').strip()[:100] or None
+                user.no_hp = hp or None
+                db.session.commit()
+                flash('Profil berhasil diperbarui.', 'success')
+            return redirect(url_for('profile'))
+
+        if aksi == 'foto':
+            file = request.files.get('foto')
+            if not file or not file.filename:
+                flash('Pilih file foto terlebih dahulu.', 'danger')
+            else:
+                ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+                file.seek(0, os.SEEK_END)
+                ukuran = file.tell()
+                file.seek(0)
+                if ext not in FOTO_EXT:
+                    flash('Format foto harus JPG, PNG, atau WEBP.', 'danger')
+                elif ukuran > FOTO_MAX:
+                    flash('Ukuran foto maksimal 1 MB.', 'danger')
+                else:
+                    nama_file = f"u{user.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.{ext}"
+                    file.save(os.path.join(PROFIL_FOLDER, nama_file))
+                    hapus_file_foto(user)
+                    user.foto = nama_file
+                    db.session.commit()
+                    flash('Foto profil berhasil diperbarui.', 'success')
+            return redirect(url_for('profile'))
+
+        if aksi == 'hapus_foto':
+            hapus_file_foto(user)
+            user.foto = None
+            db.session.commit()
+            flash('Foto profil dihapus.', 'info')
+            return redirect(url_for('profile'))
+
+        if aksi == 'password':
+            lama = request.form.get('password_lama') or ''
+            baru = request.form.get('password_baru') or ''
+            konf = request.form.get('password_konfirmasi') or ''
+            if not user.check_password(lama):
+                flash('Password saat ini salah.', 'danger')
+            elif len(baru) < 6:
+                flash('Password baru minimal 6 karakter.', 'warning')
+            elif baru != konf:
+                flash('Konfirmasi password tidak cocok.', 'warning')
+            elif baru == lama:
+                flash('Password baru harus berbeda dari yang lama.', 'warning')
+            else:
+                user.set_password(baru)
+                db.session.commit()
+                flash('Password berhasil diubah.', 'success')
+            return redirect(url_for('profile', _anchor='keamanan'))
+
+    return render_template('profile.html', user=user,
+                           ringkasan=hitung_ringkasan(user), title="Profil Saya")
+
+# =========================
+# LAPORAN PEMINJAMAN (FAKULTAS)
+# =========================
+NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+              'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+
+
+def label_bulan(ym):
+    try:
+        tahun, bln = ym.split('-')
+        return f"{NAMA_BULAN[int(bln) - 1]} {tahun}"
+    except (ValueError, IndexError):
+        return ym
+
+
+def ambil_laporan_fakultas(bulan='', status='all'):
+    """Pengajuan yang sudah diputuskan fakultas, bisa difilter bulan & status."""
+    statuses = [status] if status in ('approved', 'rejected_fakultas') else ['approved', 'rejected_fakultas']
+    q = Booking.query.filter(Booking.status.in_(statuses))
+    if bulan:
+        try:
+            tahun, bln = [int(x) for x in bulan.split('-')]
+            awal = datetime(tahun, bln, 1)
+            akhir = datetime(tahun + 1, 1, 1) if bln == 12 else datetime(tahun, bln + 1, 1)
+            q = q.filter(Booking.start_time >= awal, Booking.start_time < akhir)
+        except ValueError:
+            pass
+    return q.order_by(Booking.start_time.desc()).all()
+
+
+@app.route('/fakultas/laporan')
+@login_required
+@role_required('fakultas')
+def fakultas_laporan():
+    status = request.args.get('status', 'all')
+    if status not in ('approved', 'rejected_fakultas'):
+        status = 'all'
+
+    opsi = sorted({b.start_time.strftime('%Y-%m') for b in ambil_laporan_fakultas()}, reverse=True)
+    bulan = request.args.get('bulan', '')
+    if bulan not in opsi:
+        bulan = ''
+
+    semua_bulan = ambil_laporan_fakultas(bulan)
+    data = [b for b in semua_bulan if status == 'all' or b.status == status]
+
+    total = len(semua_bulan)
+    n_ok = sum(1 for b in semua_bulan if b.status == 'approved')
+    stat = {'total': total, 'ok': n_ok, 'no': total - n_ok,
+            'rate': round(n_ok * 100 / total) if total else 0}
+
+    return render_template(
+        'laporan_fakultas.html',
+        data=data, stat=stat, status=status, bulan=bulan,
+        bulan_opsi=[(v, label_bulan(v)) for v in opsi],
+        periode=label_bulan(bulan) if bulan else 'Semua periode',
+        dicetak=datetime.now().strftime('%d-%m-%Y %H:%M'),
+        title="Laporan Peminjaman"
+    )
+
+
+@app.route('/fakultas/laporan/export')
+@login_required
+@role_required('fakultas')
+def fakultas_laporan_export():
+    import csv, io
+    from flask import Response
+
+    data = ambil_laporan_fakultas(request.args.get('bulan', ''), request.args.get('status', 'all'))
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=';')
+    w.writerow(['No', 'Nama Pengaju', 'Ruangan', 'Kegiatan', 'Tanggal',
+                'Jam Mulai', 'Jam Selesai', 'Catatan', 'Status'])
+    for i, b in enumerate(data, 1):
+        catatan = getattr(b, 'catatan', None) or getattr(b, 'notes', None) or ''
+        w.writerow([i, b.nama_pengaju, b.room.name if b.room else '-', b.kegiatan,
+                    b.start_time.strftime('%d-%m-%Y'), b.start_time.strftime('%H:%M'),
+                    b.end_time.strftime('%H:%M'), catatan,
+                    'Disetujui' if b.status == 'approved' else 'Ditolak Fakultas'])
+
+    nama = f"laporan_peminjaman_{datetime.now().strftime('%Y%m%d')}.csv"
+    return Response('\ufeff' + buf.getvalue(), mimetype='text/csv; charset=utf-8',
+                    headers={'Content-Disposition': f'attachment; filename={nama}'})
+
+
+# RUN APP
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
-
- 
