@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% macro ico(name) -%}
+<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if name == 'dl' %}<path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/>
+{%- elif name == 'print' %}<path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/>
+{%- elif name == 'search' %}<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+{%- elif name == 'check' %}<path d="m5 12.5 4.5 4.5L19 7.5"/>
+{%- elif name == 'x' %}<path d="m6 6 12 12M18 6 6 18"/>
+{%- elif name == 'doc' %}<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>
+{%- elif name == 'pct' %}<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>
+{%- endif %}
+</svg>
+{%- endmacro %}
+
+<div class="rp">
+
+  {# ===== Kop khusus cetak ===== #}
+  <div class="rp-print-head">
+    <h1>Laporan Peminjaman Ruangan</h1>
+    <p>Fakultas Sains dan Informatika · Universitas Jenderal Achmad Yani</p>
+    <p>Periode: {{ periode }} · Status: {{ 'Disetujui' if status == 'approved' else 'Ditolak' if status == 'rejected_fakultas' else 'Semua' }}
+       · Total {{ stat.total }} (Disetujui {{ stat.ok }}, Ditolak {{ stat.no }})</p>
+    <p>Dicetak oleh {{ current_user.display_name }} pada {{ dicetak }}</p>
+  </div>
+
+  {# ===== Header ===== #}
+  <header class="rp-head rp-noprint">
+    <div>
+      <span class="rp-eyebrow"><i></i> Panel Fakultas</span>
+      <h2>Laporan Peminjaman</h2>
+      <p>Rekap pengajuan peminjaman ruangan yang sudah divalidasi fakultas.</p>
+    </div>
+    <div class="rp-export">
+      <a class="rp-btn rp-btn-ghost" href="{{ url_for('fakultas_laporan_export', status=status, bulan=bulan or None) }}">{{ ico('dl') }} Ekspor CSV</a>
+      <button type="button" class="rp-btn" id="rpPrint">{{ ico('print') }} Cetak</button>
+    </div>
+  </header>
+
+  {# ===== Ringkasan ===== #}
+  <section class="rp-stats rp-noprint">
+    <div class="rp-stat s-navy" style="--i:0">
+      <span class="rp-stat-ic">{{ ico('doc') }}</span>
+      <div><b data-count="{{ stat.total }}">{{ stat.total }}</b><span>Total divalidasi</span></div>
+    </div>
+    <div class="rp-stat s-green" style="--i:1">
+      <span class="rp-stat-ic">{{ ico('check') }}</span>
+      <div><b data-count="{{ stat.ok }}">{{ stat.ok }}</b><span>Disetujui</span></div>
+    </div>
+    <div class="rp-stat s-red" style="--i:2">
+      <span class="rp-stat-ic">{{ ico('x') }}</span>
+      <div><b data-count="{{ stat.no }}">{{ stat.no }}</b><span>Ditolak</span></div>
+    </div>
+    <div class="rp-stat s-yellow" style="--i:3">
+      <span class="rp-stat-ic">{{ ico('pct') }}</span>
+      <div><b><em data-count="{{ stat.rate }}">{{ stat.rate }}</em>%</b><span>Tingkat persetujuan</span></div>
+      <div class="rp-bar"><span style="--w: {{ stat.rate }}%"></span></div>
+    </div>
+  </section>
+
+  {# ===== Filter ===== #}
+  <div class="rp-tools rp-noprint">
+    <div class="rp-pills">
+      <a class="rp-pill {{ 'is-on' if status == 'all' }}" href="{{ url_for('fakultas_laporan', bulan=bulan or None) }}">Semua <em>{{ stat.total }}</em></a>
+      <a class="rp-pill {{ 'is-on' if status == 'approved' }}" href="{{ url_for('fakultas_laporan', status='approved', bulan=bulan or None) }}">Disetujui <em>{{ stat.ok }}</em></a>
+      <a class="rp-pill {{ 'is-on' if status == 'rejected_fakultas' }}" href="{{ url_for('fakultas_laporan', status='rejected_fakultas', bulan=bulan or None) }}">Ditolak <em>{{ stat.no }}</em></a>
+    </div>
+
+    <div class="rp-filters">
+      <form method="get" class="rp-select">
+        <input type="hidden" name="status" value="{{ status }}">
+        <select name="bulan" onchange="this.form.submit()" aria-label="Filter periode">
+          <option value="">Semua periode</option>
+          {% for val, lab in bulan_opsi %}
+          <option value="{{ val }}" {{ 'selected' if val == bulan }}>{{ lab }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      <label class="rp-search">
+        {{ ico('search') }}
+        <input type="text" id="rpSearch" placeholder="Cari pemohon, ruangan, kegiatan..." autocomplete="off">
+      </label>
+    </div>
+  </div>
+
+  {# ===== Tabel ===== #}
+  <div class="rp-card">
+    <div class="rp-tablewrap">
+      <table class="rp-table">
+        <thead>
+          <tr>
+            <th>No</th><th class="t-left">Pemohon</th><th>Ruangan</th><th class="t-left">Kegiatan</th>
+            <th>Tanggal</th><th>Waktu</th><th class="t-left">Catatan</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="rpBody">
+          {% for item in data %}
+          <tr class="rp-row" style="--i: {{ [loop.index0, 14]|min }}"
+              data-search="{{ item.nama_pengaju }} {{ item.room.name if item.room else '' }} {{ item.kegiatan }}">
+            <td>{{ loop.index }}</td>
+            <td class="t-left">
+              <div class="rp-person"><span class="rp-ava">{{ (item.nama_pengaju or '?')[0]|upper }}</span><span>{{ item.nama_pengaju }}</span></div>
+            </td>
+            <td>{{ item.room.name if item.room else '-' }}</td>
+            <td class="t-left">{{ item.kegiatan }}</td>
+            <td>{{ item.start_time.strftime('%d-%m-%Y') }}</td>
+            <td class="nowrap">{{ item.start_time.strftime('%H:%M') }} - {{ item.end_time.strftime('%H:%M') }}</td>
+            <td class="t-left rp-note">{{ item.notes if item.notes else '-' }}</td>
+            <td>
+              {% if item.status == 'approved' %}
+              <span class="rp-badge b-ok">{{ ico('check') }} Disetujui</span>
+              {% else %}
+              <span class="rp-badge b-no">{{ ico('x') }} Ditolak</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr class="rp-none"><td colspan="8">
+            <div class="rp-empty">
+              <div class="rp-empty-ic">{{ ico('doc') }}</div>
+              <h3>Belum ada data laporan</h3>
+              <p>Pengajuan yang sudah diputuskan fakultas akan muncul di sini.</p>
+            </div>
+          </td></tr>
+          {% endfor %}
+          <tr class="rp-none" id="rpNoResult" hidden><td colspan="8">
+            <div class="rp-empty">
+              <div class="rp-empty-ic">{{ ico('search') }}</div>
+              <h3>Tidak ditemukan</h3>
+              <p>Coba kata kunci lain.</p>
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rp-foot rp-noprint"><span id="rpShown">Menampilkan {{ data|length }} data</span></div>
+  </div>
+</div>
+
+<style>
+.rp { --navy:#0b2d5c; --yellow:#ffe995; --green:#137a2a; --green-bg:#b8f5c7; --red:#b30000; --red-bg:#ffd6d6;
+      --line:#e8ecf3; --muted:#5b6577; max-width:1180px; margin:0 auto; padding:10px 6px 40px; color:#1f2937; }
+.rp .ic { width:16px; height:16px; flex:none; }
+.rp-print-head { display:none; }
+
+@keyframes rpUp   { from { opacity:0; transform:translateY(22px) scale(.985); } to { opacity:1; transform:none; } }
+@keyframes rpRow  { from { opacity:0; transform:translateX(-14px); } to { opacity:1; transform:none; } }
+@keyframes rpPing { 0% { box-shadow:0 0 0 0 rgba(34,160,90,.55); } 70% { box-shadow:0 0 0 9px rgba(34,160,90,0); } 100% { box-shadow:0 0 0 0 rgba(34,160,90,0); } }
+@keyframes rpShine{ from { transform:translateX(-130%) skewX(-20deg); } to { transform:translateX(330%) skewX(-20deg); } }
+@keyframes rpBarW { from { width:0; } }
+@keyframes rpFloat{ 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
+
+/* ---- Header ---- */
+.rp-head { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap; margin-bottom:24px; animation:rpUp .7s cubic-bezier(.2,.7,.2,1) backwards; }
+.rp-eyebrow { display:inline-flex; align-items:center; gap:8px; padding:5px 13px; border-radius:999px; background:#e8f0fb; color:var(--navy);
+              font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+.rp-eyebrow i { width:8px; height:8px; border-radius:50%; background:#22a05a; animation:rpPing 2s infinite; }
+.rp-head h2 { margin:12px 0 4px; font-size:clamp(26px,3.4vw,34px); font-weight:700; color:var(--navy); }
+.rp-head p { margin:0; color:var(--muted); font-size:15px; }
+.rp-export { display:flex; gap:10px; flex-wrap:wrap; }
+
+.rp-btn { position:relative; overflow:hidden; display:inline-flex; align-items:center; gap:8px; padding:11px 20px; border:0; border-radius:14px;
+          background:var(--navy); color:#fff; font:inherit; font-size:14px; font-weight:700; text-decoration:none; cursor:pointer;
+          transition:transform .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease; }
+.rp-btn:hover { background:var(--yellow); color:var(--navy); transform:translateY(-2px); box-shadow:0 12px 24px rgba(245,181,46,.35); }
+.rp-btn:active { transform:scale(.97); }
+.rp-btn::after { content:""; position:absolute; top:0; left:0; width:35%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);
+                 transform:translateX(-130%) skewX(-20deg); animation:rpShine 4.5s ease-in-out 1.5s infinite; }
+.rp-btn-ghost { background:#fff; color:var(--navy); box-shadow:inset 0 0 0 1.6px var(--navy); }
+
+/* ---- Kartu ringkasan ---- */
+.rp-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:22px; }
+.rp-stat { position:relative; overflow:hidden; display:flex; align-items:center; flex-wrap:wrap; gap:14px; padding:18px 20px; background:#fff; border:1px solid var(--line); border-radius:20px;
+           box-shadow:0 6px 18px rgba(11,45,92,.06); animation:rpUp .7s cubic-bezier(.2,.7,.2,1) backwards; animation-delay:calc(var(--i) * .09s + .1s);
+           transition:transform .25s ease, box-shadow .25s ease; }
+.rp-stat:hover { transform:translateY(-4px); box-shadow:0 16px 30px rgba(11,45,92,.13); }
+.rp-stat b { display:block; font-size:28px; line-height:1.1; color:var(--navy); }
+.rp-stat b em { font-style:normal; }
+.rp-stat span:not(.rp-stat-ic) { display:block; margin-top:4px; font-size:12.5px; color:var(--muted); }
+.rp-stat-ic { flex:none; width:48px; height:48px; display:grid; place-items:center; border-radius:15px; transition:transform .3s ease; }
+.rp-stat-ic .ic { width:23px; height:23px; }
+.rp-stat:hover .rp-stat-ic { transform:rotate(-8deg) scale(1.1); }
+.s-navy .rp-stat-ic   { background:#e8f0fb; color:var(--navy); }
+.s-green .rp-stat-ic  { background:var(--green-bg); color:var(--green); }
+.s-red .rp-stat-ic    { background:var(--red-bg); color:var(--red); }
+.s-yellow .rp-stat-ic { background:var(--yellow); color:var(--navy); }
+.rp-bar { flex-basis:100%; height:8px; border-radius:99px; background:#eef1f6; overflow:hidden; }
+.rp-bar span { display:block !important; margin:0 !important; height:100%; width:var(--w); border-radius:99px;
+               background:linear-gradient(90deg,#f5b52e,#22a05a); animation:rpBarW 1.4s cubic-bezier(.2,.7,.2,1) .5s backwards; }
+
+/* ---- Filter ---- */
+.rp-tools { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:18px; animation:rpUp .7s cubic-bezier(.2,.7,.2,1) .35s backwards; }
+.rp-pills { display:flex; gap:8px; flex-wrap:wrap; }
+.rp-pill { display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border:1.6px solid var(--line); border-radius:999px; background:#fff;
+           color:var(--navy); font-size:14px; font-weight:600; text-decoration:none; transition:background .2s, color .2s, border-color .2s, transform .2s, box-shadow .2s; }
+.rp-pill em { font-style:normal; min-width:22px; padding:1px 7px; border-radius:99px; background:#eef2f9; font-size:12px; text-align:center; }
+.rp-pill:hover { transform:translateY(-2px); border-color:var(--navy); }
+.rp-pill.is-on { background:var(--navy); border-color:var(--navy); color:#fff; box-shadow:0 10px 20px rgba(11,45,92,.22); }
+.rp-pill.is-on em { background:var(--yellow); color:var(--navy); }
+
+.rp-filters { display:flex; gap:10px; flex-wrap:wrap; }
+.rp-select select { height:42px; padding:0 38px 0 16px; border:1.6px solid var(--line); border-radius:999px; background:#fff; color:var(--navy);
+                    font:inherit; font-size:14px; font-weight:600; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none;
+                    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230b2d5c' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+                    background-repeat:no-repeat; background-position:right 13px center; background-size:15px; transition:border-color .2s, box-shadow .2s; }
+.rp-select select:hover, .rp-select select:focus { border-color:var(--navy); box-shadow:0 0 0 4px rgba(11,45,92,.1); }
+.rp-search { display:flex; align-items:center; gap:9px; padding:0 14px; height:42px; min-width:260px; background:#fff; border:1.6px solid var(--line); border-radius:999px; color:var(--muted); transition:border-color .2s, box-shadow .2s; }
+.rp-search:focus-within { border-color:var(--navy); box-shadow:0 0 0 4px rgba(11,45,92,.12); }
+.rp-search input { flex:1; border:0; outline:0; background:none; font:inherit; font-size:14px; color:#1f2937; }
+
+/* ---- Tabel ---- */
+.rp-card { background:#fff; border:1px solid var(--line); border-radius:22px; box-shadow:0 10px 26px rgba(11,45,92,.07); overflow:hidden; animation:rpUp .7s cubic-bezier(.2,.7,.2,1) .45s backwards; }
+.rp-tablewrap { overflow-x:auto; }
+.rp-table { width:100%; border-collapse:collapse; font-size:14.5px; }
+.rp-table th { padding:15px 14px; background:var(--navy); color:#fff; font-size:13.5px; font-weight:600; text-align:center; white-space:nowrap; }
+.rp-table td { padding:14px; border-bottom:1px solid #eef1f6; text-align:center; vertical-align:middle; }
+.rp-table .t-left { text-align:left; }
+.rp-table .nowrap { white-space:nowrap; }
+.rp-row { animation:rpRow .55s cubic-bezier(.2,.7,.2,1) backwards; animation-delay:calc(var(--i) * .045s + .55s); transition:background .2s; }
+.rp-row:nth-child(even) { background:#fafbfd; }
+.rp-row:hover { background:#fff8dc; }
+.rp-row[hidden], .rp-none[hidden] { display:none; }
+.rp-person { display:flex; align-items:center; gap:10px; font-weight:600; color:var(--navy); }
+.rp-ava { flex:none; width:34px; height:34px; display:grid; place-items:center; border-radius:11px; background:linear-gradient(135deg,#0b2d5c,#1d5aa3); color:#fff; font-size:14px; font-weight:700; transition:transform .25s ease; }
+.rp-row:hover .rp-ava { transform:rotate(-8deg) scale(1.1); }
+.rp-note { max-width:240px; word-break:break-word; color:#555; font-size:13.5px; }
+.rp-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px; font-size:12.5px; font-weight:700; white-space:nowrap; }
+.rp-badge .ic { width:14px; height:14px; }
+.b-ok { background:var(--green-bg); color:var(--green); }
+.b-no { background:var(--red-bg); color:var(--red); }
+.rp-foot { padding:13px 20px; border-top:1px solid var(--line); background:#fafbfd; font-size:13px; color:var(--muted); }
+
+.rp-empty { padding:40px 10px; text-align:center; }
+.rp-empty-ic { width:64px; height:64px; margin:0 auto 12px; display:grid; place-items:center; border-radius:20px; background:var(--yellow); color:var(--navy); animation:rpFloat 4s ease-in-out infinite; }
+.rp-empty-ic .ic { width:30px; height:30px; }
+.rp-empty h3 { margin:0 0 4px; color:var(--navy); font-size:18px; }
+.rp-empty p { margin:0; color:var(--muted); font-size:14px; }
+
+@media (max-width:980px) { .rp-stats { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:620px) {
+  .rp-stats { grid-template-columns:1fr; }
+  .rp-search { min-width:0; width:100%; }
+  .rp-filters { width:100%; }
+  .rp-select, .rp-select select { width:100%; }
+}
+@media (prefers-reduced-motion:reduce) { .rp *, .rp *::before, .rp *::after { animation:none !important; transition:none !important; } }
+
+/* ---- Cetak ---- */
+@media print {
+  @page { size:A4 landscape; margin:14mm; }
+  body { background:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .topbar, .drawer, .backdrop, .flash-container, .rp-noprint { display:none !important; }
+  .content { padding:0 !important; }
+  .rp { max-width:none; padding:0; }
+  .rp-print-head { display:block; margin-bottom:14px; text-align:center; border-bottom:2px solid #0b2d5c; padding-bottom:10px; }
+  .rp-print-head h1 { margin:0 0 4px; font-size:20px; color:#0b2d5c; }
+  .rp-print-head p { margin:2px 0; font-size:11.5px; color:#333; }
+  .rp-card { border:0; box-shadow:none; border-radius:0; animation:none; }
+  .rp-table { font-size:11.5px; }
+  .rp-table th { padding:8px; font-size:11.5px; }
+  .rp-table td { padding:7px 8px; }
+  .rp-row { animation:none !important; background:#fff !important; page-break-inside:avoid; }
+  .rp-ava { display:none; }
+  .rp-badge { padding:2px 8px; font-size:10.5px; }
+}
+</style>
+
+<script>
+(function () {
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Angka hitung naik
+  document.querySelectorAll(".rp [data-count]").forEach(function (el) {
+    var target = parseInt(el.getAttribute("data-count"), 10);
+    if (!target || target < 1 || reduce) return;
+    var t0 = null;
+    el.textContent = "0";
+    setTimeout(function () {
+      requestAnimationFrame(function step(ts) {
+        if (!t0) t0 = ts;
+        var p = Math.min((ts - t0) / 1000, 1);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(step);
+      });
+    }, 300);
+  });
+
+  // Pencarian
+  var input = document.getElementById("rpSearch");
+  var rows = document.querySelectorAll(".rp-row");
+  var noRes = document.getElementById("rpNoResult");
+  var info = document.getElementById("rpShown");
+  if (input) input.addEventListener("input", function () {
+    var q = input.value.trim().toLowerCase(), shown = 0;
+    rows.forEach(function (r) {
+      var ok = r.getAttribute("data-search").toLowerCase().indexOf(q) !== -1;
+      r.hidden = !ok;
+      if (ok) shown++;
+    });
+    if (noRes) noRes.hidden = !(rows.length && shown === 0);
+    if (info) info.textContent = "Menampilkan " + shown + " dari " + rows.length + " data";
+  });
+
+  // Cetak
+  var pbtn = document.getElementById("rpPrint");
+  if (pbtn) pbtn.addEventListener("click", function () { window.print(); });
+})();
+</script>
+
+{% endblock %}
