@@ -7,6 +7,7 @@ import click
 from flask import Flask, render_template, redirect, url_for, flash, request, abort, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
+from flask import jsonify   # tambahkan ke baris import flask yang sudah ada
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from werkzeug.utils import secure_filename
 
@@ -15,6 +16,7 @@ from forms import RegisterForm, LoginForm, BookingForm, RuanganForm
 from models import db, User, Room, Booking
 from ruangan_service import RuanganService, RuanganError
 from validasi_service import AdminValidasiService, FakultasValidasiService, ValidasiError
+
 
 VALID_LOGIN_MODES = {"admin", "user", "fakultas"}
 FLASH_SUCCESS = "success"
@@ -199,7 +201,12 @@ def logout():
 @login_required
 def dashboard():
     if current_user.role == 'admin':
-        return render_template('dashboard_admin.html')
+        return render_template(
+            'dashboard_admin.html',
+            pending_count=Booking.query.filter_by(status='pending').count(),
+            user_count=User.query.count(),
+            room_count=Room.query.count(),
+        )
     if current_user.role == 'fakultas':
         return render_template('dashboard_fakultas.html')
     rooms = Room.query.all()
@@ -365,6 +372,26 @@ def inject_fakultas_counts():
                     approved_count=approved, rejected_count=rejected)
     return {}
 
+@app.context_processor
+def inject_admin_pending():
+    # jumlah pengajuan menunggu, tersedia di semua template untuk admin
+    if current_user.is_authenticated and current_user.role == 'admin':
+        return {'admin_pending': Booking.query.filter_by(status='pending').count()}
+    return {}
+
+@app.route('/admin/notifikasi')
+@login_required
+@role_required('admin')
+def admin_notifikasi():
+    bookings = Booking.query.order_by(Booking.id.desc()).all()
+    return render_template('admin_notifikasi.html', bookings=bookings, title='Notifikasi')
+
+@app.route('/admin/notifikasi/count')
+@login_required
+@role_required('admin')
+def admin_notifikasi_count():
+    return jsonify(pending=Booking.query.filter_by(status='pending').count())
+
 #FORGOT PASSWORD
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -449,7 +476,7 @@ def jadwal_admin():
     )
 
     return render_template(
-        'jadwal_admin.html',
+        'jadwal.html',
         jadwal=jadwal,
         title='Jadwal Ruangan'
     )

@@ -1,104 +1,268 @@
 {% extends "base.html" %}
-{% block content %}
-<div class="laporan-container">
-    <h2>Laporan Peminjaman</h2>
-    <p>Berikut daftar semua peminjaman ruangan.</p>
 
-    <table class="laporan-table">
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='admin_pages.css') }}">
+<style>
+  .ap .lp-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 26px; }
+  .ap .lp-head .ap-top { margin-bottom: 0; }
+  .ap .lp-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ap .lp-btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 14px;
+    font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform .18s ease, background .18s, color .18s;
+  }
+  .ap .lp-btn svg { width: 17px; height: 17px; }
+  .ap .lp-btn:hover { transform: translateY(-2px); }
+  .ap .lp-btn.line { background: #fff; color: var(--navy); border: 2px solid var(--navy); }
+  .ap .lp-btn.line:hover { background: var(--navy); color: #fff; }
+  .ap .lp-btn.solid { background: var(--navy); color: #fff; border: 2px solid var(--navy); }
+  .ap .lp-btn:focus-visible, .ap .lp-tab:focus-visible { outline: 3px solid rgba(245, 181, 46, .8); outline-offset: 3px; }
+
+  /* kartu ringkasan */
+  .ap .lp-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 24px; }
+  .ap .lp-stat { display: flex; align-items: center; gap: 16px; padding: 22px; background: #fff; border: 1px solid var(--border); border-radius: 22px; box-shadow: 0 10px 26px rgba(11, 46, 94, .07); }
+  .ap .lp-ic { flex: none; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 16px; background: var(--soft); color: var(--ink); }
+  .ap .lp-ic svg { width: 24px; height: 24px; }
+  .ap .lp-stat.t-all  { --soft: var(--blue-soft);  --ink: var(--navy); }
+  .ap .lp-stat.t-wait { --soft: var(--amber-soft); --ink: var(--amber); }
+  .ap .lp-stat.t-ok   { --soft: var(--green-soft); --ink: var(--green); }
+  .ap .lp-stat.t-no   { --soft: var(--red-soft);   --ink: var(--red); }
+  .ap .lp-num { font-size: 30px; font-weight: 700; line-height: 1; color: var(--navy); }
+  .ap .lp-lbl { margin-top: 6px; font-size: 13px; color: var(--muted); }
+
+  /* tab + filter */
+  .ap .lp-tools { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+  .ap .lp-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ap .lp-tab {
+    display: inline-flex; align-items: center; gap: 9px; padding: 10px 18px; border: 1px solid var(--border); border-radius: 999px;
+    background: #fff; color: var(--navy); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: background .18s, color .18s, box-shadow .18s;
+  }
+  .ap .lp-tab:hover { background: var(--blue-soft); }
+  .ap .lp-tab b { min-width: 24px; padding: 1px 7px; border-radius: 999px; background: var(--blue-soft); font-size: 12px; text-align: center; }
+  .ap .lp-tab.is-on { background: var(--navy); color: #fff; border-color: var(--navy); box-shadow: 0 10px 22px rgba(11, 46, 94, .25); }
+  .ap .lp-tab.is-on b { background: var(--amber-2); color: #3b2a00; }
+  .ap .lp-find { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ap .lp-field {
+    padding: 10px 16px; border: 1px solid var(--border); border-radius: 999px; background: #fff; color: var(--text);
+    font: inherit; font-size: 14px;
+  }
+  .ap .lp-field:focus { outline: 3px solid rgba(245, 181, 46, .6); outline-offset: 1px; }
+  .ap .lp-field.search { min-width: 240px; }
+
+  .ap .lp-foot { padding: 14px 22px; border-top: 1px solid var(--border); background: #f7f9fd; font-size: 13.5px; color: var(--muted); }
+
+  @media (max-width: 900px) { .ap .lp-stats { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) {
+    .ap .lp-stats { grid-template-columns: 1fr; }
+    .ap .lp-field.search { min-width: 0; width: 100%; }
+    .ap .lp-find { width: 100%; }
+  }
+  @media print {
+    .topbar, .drawer, .backdrop, .flash-container, .lp-actions, .lp-tools { display: none !important; }
+    .content { padding: 0 !important; }
+    .ap { max-width: none; animation: none; }
+    .ap .ap-card { box-shadow: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ap">
+
+  <div class="lp-head">
+    <header class="ap-top">
+      <span class="ap-tag"><i></i> Panel Admin</span>
+      <h1 class="ap-h1">Laporan Peminjaman</h1>
+      <p class="ap-lead">Rekap semua peminjaman ruangan beserta status validasinya.</p>
+    </header>
+    <div class="lp-actions">
+      <button type="button" class="lp-btn line" id="lp-csv">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+        Ekspor CSV
+      </button>
+      <button type="button" class="lp-btn solid" id="lp-print">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5a1 1 0 0 1-1 1h-2"/><rect x="7" y="14" width="10" height="6" rx="1"/></svg>
+        Cetak
+      </button>
+    </div>
+  </div>
+
+  {# ===== Ringkasan ===== #}
+  <section class="lp-stats">
+    <div class="lp-stat t-all">
+      <div class="lp-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></div>
+      <div><div class="lp-num" id="st-all">0</div><div class="lp-lbl">Total peminjaman</div></div>
+    </div>
+    <div class="lp-stat t-wait">
+      <div class="lp-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      <div><div class="lp-num" id="st-pending">0</div><div class="lp-lbl">Menunggu validasi</div></div>
+    </div>
+    <div class="lp-stat t-ok">
+      <div class="lp-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></div>
+      <div><div class="lp-num" id="st-approved">0</div><div class="lp-lbl">Disetujui</div></div>
+    </div>
+    <div class="lp-stat t-no">
+      <div class="lp-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></div>
+      <div><div class="lp-num" id="st-rejected">0</div><div class="lp-lbl">Ditolak</div></div>
+    </div>
+  </section>
+
+  {# ===== Tab status + filter ===== #}
+  <div class="lp-tools">
+    <div class="lp-tabs" role="tablist" aria-label="Filter status">
+      <button type="button" class="lp-tab is-on" data-f="all" role="tab">Semua <b id="tb-all">0</b></button>
+      <button type="button" class="lp-tab" data-f="pending" role="tab">Pending <b id="tb-pending">0</b></button>
+      <button type="button" class="lp-tab" data-f="approved" role="tab">Disetujui <b id="tb-approved">0</b></button>
+      <button type="button" class="lp-tab" data-f="rejected" role="tab">Ditolak <b id="tb-rejected">0</b></button>
+    </div>
+    <div class="lp-find">
+      <select class="lp-field" id="lp-period" aria-label="Filter periode">
+        <option value="all">Semua periode</option>
+        <option value="today">Hari ini</option>
+        <option value="week">Minggu ini</option>
+        <option value="month">Bulan ini</option>
+      </select>
+      <input type="search" class="lp-field search" id="lp-search" placeholder="Cari pemohon, ruangan, kegiatan" aria-label="Cari">
+    </div>
+  </div>
+
+  {# ===== Tabel ===== #}
+  <div class="ap-card">
+    <div class="ap-scroll">
+      <table class="ap-table">
         <thead>
-            <tr>
-                <th>No</th>
-                <th>User</th>
-                <th>Ruangan</th>
-                <th>Mulai</th>
-                <th>Selesai</th>
-                <th>Status</th>
-                <th>Catatan</th>
-            </tr>
+          <tr>
+            <th>No</th>
+            <th>Pemohon</th>
+            <th>Ruangan</th>
+            <th>Kegiatan</th>
+            <th>Tanggal</th>
+            <th>Waktu</th>
+            <th>Catatan</th>
+            <th>Status</th>
+          </tr>
         </thead>
-        <tbody>
-            {% for booking in bookings %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ booking.nama_pengaju }}</td>
-                <td>{{ booking.room.name }}</td>
-                <td>{{ booking.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>{{ booking.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>
-                    {% if booking.status == 'approved' %}
-                        <span class="status approved">Disetujui</span>
-                    {% elif booking.status == 'rejected' %}
-                        <span class="status rejected">Ditolak</span>
-                    {% else %}
-                        <span class="status pending">Pending</span>
-                    {% endif %}
-                </td>
-                <td>{{ booking.notes or '-' }}</td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="7" class="kosong">Belum ada peminjaman.</td>
-            </tr>
-            {% endfor %}
+        <tbody id="lp-body">
+          {% for booking in bookings %}
+          {% set st = booking.status if booking.status in ['approved', 'rejected'] else 'pending' %}
+          <tr data-row data-status="{{ st }}" data-date="{{ booking.start_time.strftime('%Y-%m-%d') }}">
+            <td class="c-no">{{ loop.index }}</td>
+            <td>
+              <div class="ap-who">
+                <span class="ap-av" aria-hidden="true">{{ (booking.nama_pengaju or '?')[:1]|upper }}</span>
+                <span class="ap-name">{{ booking.nama_pengaju }}</span>
+              </div>
+            </td>
+            <td>{{ booking.room.name }}</td>
+            <td>{{ booking.kegiatan or '-' }}</td>
+            <td>{{ booking.start_time.strftime('%d-%m-%Y') }}</td>
+            <td>
+              {{ booking.start_time.strftime('%H:%M') }} -
+              {% if booking.end_time.date() == booking.start_time.date() %}{{ booking.end_time.strftime('%H:%M') }}{% else %}{{ booking.end_time.strftime('%d-%m %H:%M') }}{% endif %}
+            </td>
+            <td class="ap-muted">{{ booking.notes or '-' }}</td>
+            <td>
+              {% if st == 'approved' %}
+                <span class="ap-pill ok">Disetujui</span>
+              {% elif st == 'rejected' %}
+                <span class="ap-pill bad">Ditolak</span>
+              {% else %}
+                <span class="ap-pill warn">Pending</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          <tr id="lp-empty" {% if bookings %}hidden{% endif %}>
+            <td colspan="8" class="ap-empty">{% if bookings %}Tidak ada data yang cocok dengan filter.{% else %}Belum ada peminjaman.{% endif %}</td>
+          </tr>
         </tbody>
-    </table>
+      </table>
+    </div>
+    <div class="lp-foot" id="lp-foot">Menampilkan 0 data</div>
+  </div>
+
 </div>
 
-<style>
-.laporan-container {
-    padding: 30px;
-    text-align: center;
-}
-h2 {
-    color: #0b2d5c;
-    margin-bottom: 10px;
-}
-p {
-    color: #555;
-    margin-bottom: 25px;
-}
+<script>
+(function () {
+  var rows = Array.prototype.slice.call(document.querySelectorAll("#lp-body tr[data-row]"));
+  var emptyRow = document.getElementById("lp-empty");
+  var filter = "all";
 
-.laporan-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #fff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    border-radius: 12px;
-    overflow: hidden;
-}
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function dkey(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function set(id, v) { document.getElementById(id).textContent = v; }
 
-.laporan-table th, .laporan-table td {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-    text-align: center;
-}
+  // ---- hitung total (tidak terpengaruh filter) ----
+  var count = { all: rows.length, pending: 0, approved: 0, rejected: 0 };
+  rows.forEach(function (r) { count[r.dataset.status]++; });
+  ["all", "pending", "approved", "rejected"].forEach(function (k) {
+    set("tb-" + k, count[k]);
+    set("st-" + k, count[k]);
+  });
 
-.laporan-table th {
-    background-color: #0b2d5c;
-    color: #ffffff;
-}
+  // ---- rentang tanggal untuk filter periode ----
+  function range(p) {
+    var t = new Date(), from, to;
+    if (p === "today") { from = to = dkey(t); }
+    else if (p === "week") {
+      var off = (t.getDay() + 6) % 7;
+      from = dkey(new Date(t.getFullYear(), t.getMonth(), t.getDate() - off));
+      to = dkey(new Date(t.getFullYear(), t.getMonth(), t.getDate() - off + 6));
+    } else if (p === "month") {
+      from = dkey(new Date(t.getFullYear(), t.getMonth(), 1));
+      to = dkey(new Date(t.getFullYear(), t.getMonth() + 1, 0));
+    }
+    return from ? [from, to] : null;
+  }
 
-.status {
-    padding: 5px 10px;
-    border-radius: 8px;
-    font-weight: 500;
-    color: white;
-}
+  function apply() {
+    var q = document.getElementById("lp-search").value.trim().toLowerCase();
+    var rg = range(document.getElementById("lp-period").value);
+    var shown = 0;
+    rows.forEach(function (r) {
+      var ok = (filter === "all" || r.dataset.status === filter) &&
+               (!rg || (r.dataset.date >= rg[0] && r.dataset.date <= rg[1])) &&
+               (!q || r.textContent.toLowerCase().indexOf(q) !== -1);
+      r.hidden = !ok;
+      if (ok) { shown++; r.querySelector(".c-no").textContent = shown; }
+    });
+    if (rows.length) emptyRow.hidden = shown !== 0;
+    set("lp-foot", "Menampilkan " + shown + " dari " + rows.length + " data");
+  }
 
-.status.approved {
-    background-color: #4caf50; /* hijau */
-}
-.status.rejected {
-    background-color: #f44336; /* merah */
-}
-.status.pending {
-    background-color: #ff9800; /* oranye */
-}
+  document.querySelectorAll(".lp-tab").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".lp-tab").forEach(function (x) { x.classList.remove("is-on"); });
+      b.classList.add("is-on");
+      filter = b.dataset.f;
+      apply();
+    });
+  });
+  document.getElementById("lp-period").addEventListener("change", apply);
+  document.getElementById("lp-search").addEventListener("input", apply);
+  document.getElementById("lp-print").addEventListener("click", function () { window.print(); });
 
-.kosong {
-    color: #777;
-    font-style: italic;
-    padding: 20px;
-}
-</style>
+  // ---- ekspor CSV (hanya baris yang sedang tampil) ----
+  document.getElementById("lp-csv").addEventListener("click", function () {
+    function esc(s) { return '"' + String(s).replace(/\s+/g, " ").trim().replace(/"/g, '""') + '"'; }
+    var lines = [["No", "Pemohon", "Ruangan", "Kegiatan", "Tanggal", "Waktu", "Catatan", "Status"].map(esc).join(",")];
+    rows.forEach(function (r) {
+      if (r.hidden) return;
+      var c = r.querySelectorAll("td");
+      lines.push([0, 1, 2, 3, 4, 5, 6, 7].map(function (i) { return esc(c[i].textContent); }).join(","));
+    });
+    var blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "laporan-peminjaman-" + dkey(new Date()) + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  apply();
+})();
+</script>
 {% endblock %}

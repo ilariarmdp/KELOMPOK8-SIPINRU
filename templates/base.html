@@ -343,6 +343,9 @@
     @media (prefers-reduced-motion:reduce){
       *{transition:none !important}
     }
+
+    .nav-badge{display:inline-block;min-width:20px;margin-left:6px;padding:1px 7px;border-radius:999px;background:#e11d48;color:#fff;font-size:11px;font-weight:700;text-align:center}
+    .nav-badge[hidden]{display:none}
   </style>
 
   {% block head %}{% endblock %}
@@ -399,10 +402,11 @@
 
       {% if current_user.is_authenticated %}
         {% if current_user.role == 'admin' %}
-          <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">🏠 Dashboard</a>
+          <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint=='dashboard' }}">🏠 Homepage</a>
           <a href="{{ url_for('data_user') }}" class="{{ 'active' if request.endpoint=='data_user' }}">👥 Data User</a>
           <a href="{{ url_for('data_ruangan') }}" class="{{ 'active' if request.endpoint=='data_ruangan' }}">🏢 Data Ruangan</a>
           <a href="{{ url_for('admin') }}" class="{{ 'active' if request.endpoint=='admin' }}">✅ Validasi Data Pengajuan</a>
+          <a href="{{ url_for('admin_notifikasi') }}" class="{{ 'active' if request.endpoint=='admin_notifikasi' }}">🔔 Notifikasi <span class="nav-badge js-pending" {% if not admin_pending %}hidden{% endif %}>{{ admin_pending|default(0) }}</span></a>
           <a href="{{ url_for('jadwal') }}" class="{{ 'active' if request.endpoint=='jadwal' }}">📅 Jadwal Ruangan</a>
           <a href="{{ url_for('laporan_peminjaman') }}" class="{{ 'active' if request.endpoint=='laporan_peminjaman' }}">📊 Laporan Peminjaman</a>
           <hr>
@@ -482,6 +486,45 @@
       },2000);
     }
   </script>
+
+    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+  <div id="admin-poll" hidden
+      data-url="{{ url_for('admin_notifikasi_count') }}"
+      data-target="{{ url_for('admin_notifikasi') }}"
+      data-pending="{{ admin_pending|default(0) }}"></div>
+  <script>
+  (function () {
+    var box = document.getElementById('admin-poll');
+    var last = parseInt(box.dataset.pending, 10) || 0;
+    function paint(n) {
+      document.querySelectorAll('.js-pending').forEach(function (b) {
+        b.textContent = n > 99 ? '99+' : n;
+        b.hidden = !n;
+      });
+    }
+    function toast(n) {
+      var t = document.createElement('a');
+      t.href = box.dataset.target;
+      t.textContent = '🔔 ' + n + ' pengajuan baru menunggu validasi';
+      t.style.cssText = 'position:fixed;right:24px;bottom:24px;z-index:1300;padding:14px 20px;border-radius:16px;background:#0b2e5e;color:#fff;font-weight:600;font-size:14px;text-decoration:none;box-shadow:0 14px 32px rgba(11,46,94,.35)';
+      document.body.appendChild(t);
+      setTimeout(function () { t.remove(); }, 8000);
+    }
+    function poll() {
+      fetch(box.dataset.url, { credentials: 'same-origin' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          if (d.pending > last) toast(d.pending - last);
+          last = d.pending;
+          paint(last);
+        })
+        .catch(function () {});
+    }
+    setInterval(poll, 30000);
+  })();
+  </script>
+  {% endif %}
 
 </body>
 </html>

@@ -1,0 +1,111 @@
+/* =========================================================
+   SIPINRU - gaya bersama halaman admin (Data User, Data Ruangan,
+   Jadwal, Laporan, Validasi). Semua selector di-scope ke .ap
+   ========================================================= */
+.ap {
+  --navy: #0b2e5e;
+  --blue-soft: #e8f0fb;
+  --green: #15803d;  --green-soft: #dcfce7;
+  --amber: #b45309;  --amber-2: #f5b52e; --amber-soft: #fef3c7;
+  --red: #b91c1c;    --red-soft: #fee2e2;
+  --sky: #0369a1;    --sky-soft: #e0f2fe;
+  --violet: #6d28d9; --violet-soft: #ede9fe;
+  --text: #1f2a3d;
+  --muted: #5f6b7e;
+  --border: #e4e8ef;
+
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 8px 56px;
+  color: var(--text);
+  animation: apIn .6s cubic-bezier(.2, .7, .2, 1) backwards;
+}
+@keyframes apIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes apPing {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 160, 90, .55); }
+  70%  { box-shadow: 0 0 0 10px rgba(34, 160, 90, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 160, 90, 0); }
+}
+
+/* ---------- Header halaman ---------- */
+.ap .ap-top { margin-bottom: 26px; }
+.ap .ap-tag {
+  display: inline-flex; align-items: center; gap: 9px; margin-bottom: 14px; padding: 6px 14px;
+  border-radius: 999px; background: var(--blue-soft); color: var(--navy);
+  font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+}
+.ap .ap-tag i { width: 8px; height: 8px; border-radius: 50%; background: #22a05a; animation: apPing 2s infinite; }
+.ap .ap-h1 { margin: 0 0 8px; font-size: clamp(26px, 3.6vw, 36px); font-weight: 700; line-height: 1.15; color: var(--navy); }
+.ap .ap-lead { margin: 0; max-width: 560px; font-size: 15px; line-height: 1.7; color: var(--muted); }
+
+/* ---------- Toolbar (jumlah data + tombol aksi) ---------- */
+.ap .ap-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.ap .ap-count { padding: 5px 13px; border-radius: 999px; background: var(--blue-soft); color: var(--navy); font-size: 12.5px; font-weight: 600; }
+
+.ap .ap-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border: 0; border-radius: 14px;
+  background: var(--amber-2); color: #3b2a00; font: inherit; font-size: 14.5px; font-weight: 700; text-decoration: none; cursor: pointer;
+  box-shadow: 0 10px 22px rgba(245, 181, 46, .35);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.ap .ap-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 26px rgba(245, 181, 46, .42); }
+.ap .ap-btn svg { width: 18px; height: 18px; }
+.ap .ap-btn:focus-visible, .ap .ap-mini:focus-visible { outline: 3px solid rgba(245, 181, 46, .8); outline-offset: 3px; }
+
+/* ---------- Kartu + tabel ---------- */
+.ap .ap-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 24px; overflow: hidden;
+  box-shadow: 0 12px 30px rgba(11, 46, 94, .08);
+}
+.ap .ap-scroll { overflow-x: auto; }
+.ap .ap-table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 14.5px; }
+.ap .ap-table thead th {
+  padding: 16px 20px; background: linear-gradient(145deg, #0b2e5e, #123e78);
+  color: #fff; font-size: 13.5px; font-weight: 600; text-align: left; white-space: nowrap;
+}
+.ap .ap-table tbody td { padding: 15px 20px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+.ap .ap-table tbody tr:last-child td { border-bottom: 0; }
+.ap .ap-table tbody tr { transition: background .15s ease; }
+.ap .ap-table tbody tr:hover { background: #f7f9fd; }
+.ap .ap-table .c-no { width: 56px; color: var(--muted); }
+.ap .ap-table .c-center { text-align: center; }
+.ap .ap-muted { color: var(--muted); }
+.ap .ap-name { font-weight: 600; color: var(--navy); }
+.ap .ap-empty { padding: 40px 20px !important; text-align: center !important; color: var(--muted); }
+
+/* ---------- Avatar inisial ---------- */
+.ap .ap-who { display: flex; align-items: center; gap: 12px; }
+.ap .ap-av {
+  flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%;
+  background: linear-gradient(135deg, #f5b52e, #d97706); color: #fff; font-size: 14px; font-weight: 700;
+}
+
+/* ---------- Pill status / role ---------- */
+.ap .ap-pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 600; white-space: nowrap; background: #eef1f6; color: var(--muted); }
+.ap .ap-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.ap .ap-pill.ok     { background: var(--green-soft);  color: var(--green); }
+.ap .ap-pill.warn   { background: var(--amber-soft);  color: var(--amber); }
+.ap .ap-pill.bad    { background: var(--red-soft);    color: var(--red); }
+.ap .ap-pill.info   { background: var(--sky-soft);    color: var(--sky); }
+.ap .ap-pill.violet { background: var(--violet-soft); color: var(--violet); }
+
+/* ---------- Tombol kecil di kolom aksi ---------- */
+.ap .ap-act { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.ap .ap-act form { margin: 0; }
+.ap .ap-mini {
+  display: inline-flex; align-items: center; padding: 7px 16px; border: 0; border-radius: 999px;
+  font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer;
+  background: var(--blue-soft); color: var(--navy);
+  transition: background .18s ease, color .18s ease;
+}
+.ap .ap-mini:hover { background: var(--navy); color: #fff; }
+.ap .ap-mini.danger { background: var(--red-soft); color: var(--red); }
+.ap .ap-mini.danger:hover { background: var(--red); color: #fff; }
+
+@media (max-width: 640px) {
+  .ap { padding: 4px 0 40px; }
+  .ap .ap-table thead th, .ap .ap-table tbody td { padding: 13px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ap, .ap * { animation: none !important; transition: none !important; }
+}

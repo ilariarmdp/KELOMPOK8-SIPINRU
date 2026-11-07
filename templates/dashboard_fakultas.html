@@ -811,6 +811,9 @@
     {% set _appr = approved_count|default(0, true) %}
     {% set _rej  = rejected_count|default(0, true) %}
     {% set _total = _pend + _appr + _rej %}
+    {% set _wp = ((_pend * 100 / _total)|round(1)) if _total else 0 %}
+    {% set _wa = ((_appr * 100 / _total)|round(1)) if _total else 0 %}
+    {% set _wr = ((_rej  * 100 / _total)|round(1)) if _total else 0 %}
     <div class="fk-tile t-stats fk-in" style="--d:.4s">
       <div class="st-head">
         <h2>Ringkasan Pengajuan</h2>
@@ -832,10 +835,11 @@
         </div>
       </div>
 
+      {# Lebar bar diisi lewat JS dari data-w supaya atribut HTML bebas Jinja di dalam CSS #}
       <div class="st-bar" role="img" aria-label="Perbandingan status pengajuan">
-        <span class="b-pending"  style="flex: 0 0 {{ ((_pend * 100 / _total)|round(1)) if _total else 0 }}%"></span>
-        <span class="b-approved" style="flex: 0 0 {{ ((_appr * 100 / _total)|round(1)) if _total else 0 }}%"></span>
-        <span class="b-rejected" style="flex: 0 0 {{ ((_rej  * 100 / _total)|round(1)) if _total else 0 }}%"></span>
+        <span class="b-pending"  data-w="{{ _wp }}"></span>
+        <span class="b-approved" data-w="{{ _wa }}"></span>
+        <span class="b-rejected" data-w="{{ _wr }}"></span>
       </div>
     </div>
     {% endif %}
@@ -847,6 +851,11 @@
   (function () {
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var canHover = window.matchMedia && window.matchMedia("(hover: hover)").matches;
+
+    // Lebar bar ringkasan (diambil dari data-w)
+    document.querySelectorAll(".st-bar span[data-w]").forEach(function (el) {
+      el.style.flex = "0 0 " + el.getAttribute("data-w") + "%";
+    });
 
     // Sapaan sesuai waktu
     var h = new Date().getHours();

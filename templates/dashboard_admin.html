@@ -1,101 +1,459 @@
 {% extends "base.html" %}
 {% block content %}
-
-<div class="dashboard-container">
-  <div class="dashboard-grid">
-
-    <a href="{{ url_for('admin') }}" class="card">
-      <span class="emoji">✅</span>
-      <span>Validasi Data Pengajuan</span>
-    </a>
-
-    
-    <a href="{{ url_for('data_user') }}" class="card">
-      <span class="emoji">👥</span>
-      <span>Data User</span>
-    </a>
-
-    <a href="{{ url_for('data_ruangan') }}" class="card">
-      <span class="emoji">🏢</span>
-      <span>Data Ruangan</span>
-    </a>
-
-    <a href="{{ url_for('jadwal') }}" class="card">
-      <span class="emoji">📅</span>
-      <span>Jadwal Ruangan</span>
-    </a>
-
-    <a href="{{ url_for('laporan_peminjaman') }}" class="card">
-      <span class="emoji">📊</span>
-      <span>Laporan Peminjaman</span>
-    </a>
-
-  </div>
-</div>
+{# jumlah pengajuan menunggu: dari route (pending_count) atau context processor (admin_pending) #}
+{% set pend = pending_count if pending_count is defined else (admin_pending|default(0)) %}
 
 <style>
-  .dashboard-container {
-    width: min(1100px, 96%);
-    margin: 40px auto;
+  /* Semua style di-scope ke .ad-dash / .ad-dock supaya tidak mengganggu base.html */
+  .ad-dash {
+    --navy: #0b2e5e;
+    --blue-soft: #e8f0fb;
+    --green: #15803d;
+    --green-2: #22a05a;
+    --green-soft: #dcfce7;
+    --amber: #d97706;
+    --amber-2: #f5b52e;
+    --amber-soft: #fef3c7;
+    --violet: #6d28d9;
+    --violet-2: #8b5cf6;
+    --violet-soft: #ede9fe;
+    --sky: #0369a1;
+    --sky-2: #38bdf8;
+    --sky-soft: #e0f2fe;
+    --text: #1f2a3d;
+    --muted: #5f6b7e;
+    --border: #e4e8ef;
+
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 36px 24px 72px;
+    color: var(--text);
   }
 
-  .dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 36px;
-    justify-items: center;
+  @keyframes adIn { from { opacity: 0; transform: translateY(26px) scale(.98); } to { opacity: 1; transform: none; } }
+  @keyframes adPing { 0% { box-shadow: 0 0 0 0 rgba(34,160,90,.55); } 70% { box-shadow: 0 0 0 10px rgba(34,160,90,0); } 100% { box-shadow: 0 0 0 0 rgba(34,160,90,0); } }
+  @keyframes adGrad { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+  @keyframes adShine { from { transform: translateX(-130%) skewX(-20deg); } to { transform: translateX(320%) skewX(-20deg); } }
+  @keyframes adFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  @keyframes adRipple { 0% { transform: scale(.35); opacity: .55; } 100% { transform: scale(1.7); opacity: 0; } }
+  @keyframes adShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  @keyframes adDrift { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-26px,22px) scale(1.15); } }
+  @keyframes adBar { 0%, 100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
+  @keyframes adTick {
+    0%, 10%   { background: transparent; border-color: rgba(255,255,255,.35); }
+    16%, 72%  { background: var(--green-2); border-color: var(--green-2); }
+    82%, 100% { background: transparent; border-color: rgba(255,255,255,.35); }
   }
+  @keyframes adTickIc { 0%, 12% { opacity: 0; transform: scale(.3); } 18%, 72% { opacity: 1; transform: scale(1); } 82%, 100% { opacity: 0; transform: scale(.3); } }
 
-  .card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--yellow);
-    color: var(--navy);
-    text-decoration: none;
-    width: 100%;
-    max-width: 320px;
-    height: 240px;
-    border-radius: 28px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .08);
-    transition: transform .18s ease, box-shadow .18s ease;
-    font-family: "Poppins", system-ui, sans-serif;
+  .ad-dash .ad-in { animation: adIn .85s cubic-bezier(.2,.7,.2,1) backwards; animation-delay: var(--d, 0s); }
+
+  /* ---------- Header ---------- */
+  .ad-dash .ad-top { margin-bottom: 30px; }
+  .ad-dash .ad-tag {
+    display: inline-flex; align-items: center; gap: 9px; margin-bottom: 14px; padding: 6px 14px;
+    border-radius: 999px; background: var(--blue-soft); color: var(--navy);
+    font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
   }
-
-  .card span {
-    margin-top: 10px;
-    font-weight: 700;
-    font-size: 17px;
-    letter-spacing: .3px;
+  .ad-dash .ad-tag i { width: 8px; height: 8px; border-radius: 50%; background: var(--green-2); animation: adPing 2s infinite; }
+  .ad-dash .ad-h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 40px); font-weight: 700; line-height: 1.15; color: var(--navy); }
+  .ad-dash .ad-h1 .g {
+    background: linear-gradient(90deg, #0b2e5e, #2a6bb3, #22a05a, #0b2e5e);
+    background-size: 200% 100%;
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+    animation: adGrad 6s linear infinite;
   }
+  .ad-dash .ad-lead { margin: 0; max-width: 560px; font-size: 15px; line-height: 1.75; color: var(--muted); }
 
-  /* === FIX EMOJI TETEP KECIL === */
-  .card .emoji {
-    font-size: 150px !important; 
-    line-height: 1;
-    margin-bottom: 0;
-    display: block;
+  /* ---------- Bento ---------- */
+  .ad-dash .ad-bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 22px; }
+
+  .ad-dash .ad-tile {
+    position: relative; overflow: hidden; display: flex; flex-direction: column;
+    border-radius: 28px; text-decoration: none; color: inherit;
+    transition: transform .18s ease-out, box-shadow .3s ease, border-color .3s ease;
+    will-change: transform;
   }
-
-  .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, .12);
+  .ad-dash .ad-tile[data-tilt]::before {
+    content: ""; position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), var(--spot), transparent 60%);
+    opacity: 0; transition: opacity .3s ease; pointer-events: none;
   }
+  .ad-dash .ad-tile[data-tilt]:hover::before { opacity: 1; }
+  .ad-dash .ad-tile > * { position: relative; z-index: 1; }
+  .ad-dash a.ad-tile:focus-visible { outline: 3px solid rgba(245,181,46,.8); outline-offset: 4px; }
 
+  /* ----- Tile utama: Validasi ----- */
+  .ad-dash .t-main {
+    --spot: rgba(255,255,255,.15);
+    grid-column: span 7; min-height: 370px; padding: 38px; color: #fff;
+    background: linear-gradient(145deg, #0b2e5e 0%, #123e78 55%, #1d5aa3 100%);
+    box-shadow: 0 24px 48px rgba(11,46,94,.30);
+  }
+  .ad-dash .t-main:hover { box-shadow: 0 30px 56px rgba(11,46,94,.38); }
+  .ad-dash .t-main::after {
+    content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(255,255,255,.16) 1.2px, transparent 1.3px);
+    background-size: 24px 24px;
+    -webkit-mask-image: linear-gradient(135deg, #000 0%, transparent 62%);
+            mask-image: linear-gradient(135deg, #000 0%, transparent 62%);
+  }
+  .ad-dash .mt-rings { position: absolute !important; right: -90px; top: -90px; width: 340px; height: 340px; pointer-events: none; z-index: 0 !important; }
+  .ad-dash .mt-rings i { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.3); animation: adRipple 7s ease-out infinite; }
+  .ad-dash .mt-rings i:nth-child(2) { animation-delay: 2.3s; }
+  .ad-dash .mt-rings i:nth-child(3) { animation-delay: 4.6s; }
+  .ad-dash .mt-grid { flex: 1; display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 30px; }
+  .ad-dash .mt-ic {
+    width: 62px; height: 62px; margin-bottom: 20px; display: grid; place-items: center; border-radius: 18px;
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.26); backdrop-filter: blur(6px);
+    transition: transform .3s ease;
+  }
+  .ad-dash .mt-ic svg { width: 30px; height: 30px; color: #fff; }
+  .ad-dash .t-main:hover .mt-ic { transform: scale(1.08) rotate(-4deg); }
+  .ad-dash .mt-pill {
+    display: inline-flex; align-items: center; gap: 8px; margin: 0 0 14px 12px; padding: 5px 12px; border-radius: 999px;
+    background: rgba(245,181,46,.18); border: 1px solid rgba(245,181,46,.45); color: #ffe29a;
+    font-size: 12.5px; font-weight: 600; vertical-align: top;
+  }
+  .ad-dash .mt-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--amber-2); animation: adPing 2s infinite; }
+  .ad-dash .mt-title { display: block; margin: 0 0 10px; font-size: 28px; font-weight: 700; line-height: 1.2; color: #fff; }
+  .ad-dash .mt-desc { display: block; margin: 0 0 26px; font-size: 14.5px; line-height: 1.75; color: rgba(255,255,255,.82); }
+  .ad-dash .mt-cta {
+    position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 10px; padding: 13px 22px;
+    border-radius: 14px; background: var(--amber-2); color: #3b2a00; font-size: 14.5px; font-weight: 700;
+    box-shadow: 0 10px 22px rgba(245,181,46,.35);
+  }
+  .ad-dash .mt-cta svg { width: 18px; height: 18px; transition: transform .25s ease; }
+  .ad-dash .mt-cta::after {
+    content: ""; position: absolute; top: 0; left: 0; width: 35%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+    transform: translateX(-130%) skewX(-20deg); animation: adShine 4.5s ease-in-out 1.5s infinite;
+  }
+  .ad-dash .t-main:hover .mt-cta svg { transform: translateX(5px); }
+
+  .ad-dash .q-panel {
+    display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 22px;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(8px);
+    box-shadow: 0 18px 36px rgba(0,0,0,.22); animation: adFloat 6s ease-in-out infinite;
+  }
+  .ad-dash .q-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.12); }
+  .ad-dash .q-dot {
+    flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.35); animation: adTick 7s ease-in-out infinite; animation-delay: var(--qd, 0s);
+  }
+  .ad-dash .q-dot svg { width: 14px; height: 14px; color: #fff; opacity: 0; animation: adTickIc 7s ease-in-out infinite; animation-delay: var(--qd, 0s); }
+  .ad-dash .q-lines { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+  .ad-dash .q-lines i {
+    display: block; height: 7px; border-radius: 99px;
+    background: linear-gradient(90deg, rgba(255,255,255,.16), rgba(255,255,255,.38), rgba(255,255,255,.16));
+    background-size: 200% 100%; animation: adShimmer 3s linear infinite;
+  }
+  .ad-dash .q-lines i:first-child { width: 80%; }
+  .ad-dash .q-lines i:last-child { width: 50%; }
+
+  /* ----- Tile putih (Jadwal, Data User, Data Ruangan, Laporan) ----- */
+  .ad-dash .t-card {
+    --spot: var(--c-spot);
+    padding: 32px; background: #fff; border: 1px solid var(--border);
+    box-shadow: 0 12px 30px rgba(11,46,94,.08);
+  }
+  .ad-dash .t-card:hover { box-shadow: 0 24px 46px var(--c-shadow); border-color: var(--c-line); }
+  .ad-dash .t-card::after {
+    content: ""; position: absolute; right: -70px; top: -70px; width: 230px; height: 230px; border-radius: 50%;
+    background: radial-gradient(circle, var(--c-glow), transparent 70%);
+    animation: adDrift 9s ease-in-out infinite; pointer-events: none; z-index: 0;
+  }
+  .ad-dash .c-amber  { --c-spot: rgba(245,181,46,.18); --c-shadow: rgba(217,119,6,.16);  --c-line: rgba(245,181,46,.6);  --c-glow: rgba(245,181,46,.34); --c-a: var(--amber-2);  --c-b: var(--amber);  --c-sh: rgba(217,119,6,.32); }
+  .ad-dash .c-violet { --c-spot: rgba(139,92,246,.14); --c-shadow: rgba(109,40,217,.15); --c-line: rgba(139,92,246,.5);  --c-glow: rgba(139,92,246,.28); --c-a: var(--violet-2); --c-b: var(--violet); --c-sh: rgba(109,40,217,.30); }
+  .ad-dash .c-sky    { --c-spot: rgba(56,189,248,.16); --c-shadow: rgba(3,105,161,.15);  --c-line: rgba(56,189,248,.55); --c-glow: rgba(56,189,248,.30); --c-a: var(--sky-2);    --c-b: var(--sky);    --c-sh: rgba(3,105,161,.30); }
+  .ad-dash .c-green  { --c-spot: rgba(34,160,90,.16);  --c-shadow: rgba(21,128,61,.16);  --c-line: rgba(34,160,90,.55);  --c-glow: rgba(34,160,90,.28);  --c-a: var(--green-2);  --c-b: var(--green);  --c-sh: rgba(21,128,61,.30); }
+
+  .ad-dash .cd-ic {
+    width: 62px; height: 62px; margin-bottom: 20px; display: grid; place-items: center; border-radius: 19px; color: #fff;
+    background: linear-gradient(135deg, var(--c-a), var(--c-b)); box-shadow: 0 12px 24px var(--c-sh);
+    transition: transform .3s ease;
+  }
+  .ad-dash .cd-ic svg { width: 30px; height: 30px; }
+  .ad-dash .t-card:hover .cd-ic { transform: scale(1.08) rotate(-4deg); }
+  .ad-dash .cd-title { display: block; margin: 0 0 8px; font-size: 22px; font-weight: 700; color: var(--navy); }
+  .ad-dash .cd-desc { display: block; margin: 0 0 18px; font-size: 14.5px; line-height: 1.7; color: var(--muted); }
+  .ad-dash .cd-stat {
+    align-self: flex-start; margin-bottom: 18px; padding: 4px 12px; border-radius: 999px;
+    background: var(--blue-soft); color: var(--navy); font-size: 12.5px; font-weight: 600;
+  }
+  .ad-dash .cd-cta {
+    margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 9px; padding: 12px 20px;
+    border-radius: 14px; background: var(--amber-soft); color: var(--navy); font-size: 14.5px; font-weight: 700;
+    transition: background .25s ease, color .25s ease;
+  }
+  .ad-dash .cd-cta svg { width: 18px; height: 18px; transition: transform .25s ease; }
+  .ad-dash .t-card:hover .cd-cta { background: var(--navy); color: #fff; }
+  .ad-dash .t-card:hover .cd-cta svg { transform: translateX(5px); }
+
+  .ad-dash .t-jadwal { grid-column: span 5; min-height: 370px; }
+  .ad-dash .t-sm { grid-column: span 4; }
+
+  /* mini kalender di tile Jadwal */
+  .ad-dash .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 22px; }
+  .ad-dash .cal i { display: block; height: 22px; border-radius: 7px; background: #f1f3f8; }
+  .ad-dash .cal i.on { background: linear-gradient(135deg, var(--c-a), var(--c-b)); animation: adFloat 4s ease-in-out infinite; animation-delay: var(--cd, 0s); }
+
+  /* mini grafik di tile Laporan */
+  .ad-dash .bars { display: flex; align-items: flex-end; gap: 8px; height: 52px; margin-bottom: 20px; }
+  .ad-dash .bars i {
+    display: block; width: 14px; height: var(--h); border-radius: 6px 6px 3px 3px; transform-origin: bottom;
+    background: linear-gradient(180deg, var(--green-2), var(--green)); animation: adBar 3.6s ease-in-out infinite; animation-delay: var(--dl);
+  }
+  .ad-dash .bars i:nth-child(even) { background: linear-gradient(180deg, var(--amber-2), var(--amber)); }
+
+  /* =====================================================
+     Dock samping kiri
+     ===================================================== */
+  @keyframes dkInX { from { opacity: 0; transform: translateX(-90px); } }
+  @keyframes dkInY { from { opacity: 0; transform: translateY(90px); } }
+  @keyframes dkBadge { 0% { box-shadow: 0 0 0 2px #fff, 0 0 0 2px rgba(225,29,72,.55); } 70% { box-shadow: 0 0 0 2px #fff, 0 0 0 9px rgba(225,29,72,0); } 100% { box-shadow: 0 0 0 2px #fff, 0 0 0 2px rgba(225,29,72,0); } }
+  @keyframes dkPop { 0% { transform: scale(1); } 45% { transform: scale(1.3) rotate(-8deg); } 100% { transform: scale(1.12); } }
+
+  .ad-dock {
+    position: fixed; left: 14px; top: 110px; bottom: 0; margin: auto 0; height: fit-content; z-index: 30;
+    display: flex; flex-direction: column; gap: 10px; padding: 10px; border-radius: 26px;
+    background: rgba(255,255,255,.72);
+    -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
+    border: 1px solid rgba(255,255,255,.9);
+    box-shadow: 0 18px 42px rgba(11,46,94,.18), inset 0 1px 0 rgba(255,255,255,.85);
+    animation: dkInX .85s cubic-bezier(.2,.8,.2,1) .35s backwards;
+  }
+  .ad-dock .dk {
+    position: relative; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 18px;
+    text-decoration: none; transition: background .2s ease, box-shadow .2s ease, transform .2s ease;
+  }
+  .ad-dock .dk::before {
+    content: ""; position: absolute; left: -10px; top: 50%; width: 4px; height: 0; border-radius: 4px;
+    background: linear-gradient(180deg, #f5b52e, #d97706); transform: translateY(-50%); transition: height .25s ease;
+  }
+  .ad-dock .dk:hover, .ad-dock .dk:focus-visible, .ad-dock .dk.is-active { background: #fff; box-shadow: 0 10px 22px rgba(11,46,94,.16); outline: none; }
+  .ad-dock .dk:hover { transform: translateX(3px); }
+  .ad-dock .dk:hover::before, .ad-dock .dk:focus-visible::before { height: 20px; }
+  .ad-dock .dk.is-active::before { height: 28px; }
+  .ad-dock .dk:focus-visible { box-shadow: 0 0 0 3px rgba(245,181,46,.7), 0 10px 22px rgba(11,46,94,.16); }
+  .ad-dock .dk-ic {
+    display: block; font-size: 28px; line-height: 1;
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+    filter: drop-shadow(0 3px 4px rgba(11,46,94,.22));
+  }
+  .ad-dock .dk:hover .dk-ic { animation: dkPop .45s ease forwards; }
+  .ad-dock .dk-badge {
+    position: absolute; top: -5px; right: -5px; min-width: 21px; height: 21px; padding: 0 6px; display: grid; place-items: center;
+    border-radius: 999px; background: #e11d48; color: #fff; font-size: 11px; font-weight: 700; line-height: 1;
+    animation: dkBadge 2.4s ease-out infinite;
+  }
+  .ad-dock .dk-badge[hidden] { display: none; }
+  .ad-dock .dk-tip {
+    position: absolute; left: calc(100% + 18px); top: 50%; padding: 8px 14px; border-radius: 12px;
+    background: #0b2e5e; color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap;
+    opacity: 0; pointer-events: none; transform: translate(-8px, -50%);
+    transition: opacity .2s ease, transform .25s ease; box-shadow: 0 10px 24px rgba(11,46,94,.28);
+  }
+  .ad-dock .dk-tip::before { content: ""; position: absolute; left: -5px; top: 50%; width: 10px; height: 10px; background: inherit; transform: translateY(-50%) rotate(45deg); border-radius: 2px; }
+  .ad-dock .dk:hover .dk-tip, .ad-dock .dk:focus-visible .dk-tip { opacity: 1; transform: translate(0, -50%); }
+
+  /* ---------- Responsif ---------- */
+  @media (min-width: 721px) and (max-width: 1300px) { .ad-dash { padding-left: 100px; } }
   @media (max-width: 960px) {
-    .dashboard-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
-    }
+    .ad-dash .t-main, .ad-dash .t-jadwal { grid-column: span 12; min-height: 0; }
+    .ad-dash .t-sm { grid-column: span 6; }
   }
-
-  @media (max-width: 640px) {
-    .dashboard-grid {
-      grid-template-columns: 1fr;
-      gap: 18px;
+  @media (max-width: 720px) {
+    .ad-dash .mt-grid { grid-template-columns: 1fr; }
+    .ad-dash .t-main { padding: 28px 24px; }
+    .ad-dash .t-card { padding: 28px 24px; }
+    .ad-dash .t-sm { grid-column: span 12; }
+    .ad-dock {
+      left: 0; right: 0; top: auto; bottom: 14px; margin: 0 auto; width: fit-content; flex-direction: row; gap: 10px;
+      animation-name: dkInY;
     }
+    .ad-dock .dk { width: 48px; height: 48px; }
+    .ad-dock .dk::before { left: 50%; top: auto; bottom: -9px; width: 0; height: 4px; transform: translateX(-50%); transition: width .25s ease; }
+    .ad-dock .dk:hover::before, .ad-dock .dk:focus-visible::before { width: 20px; height: 4px; }
+    .ad-dock .dk.is-active::before { width: 28px; height: 4px; }
+    .ad-dock .dk:hover { transform: translateY(-3px); }
+    .ad-dock .dk-tip { left: 50%; top: auto; bottom: calc(100% + 16px); transform: translate(-50%, 8px); }
+    .ad-dock .dk-tip::before { left: 50%; top: auto; bottom: -5px; transform: translateX(-50%) rotate(45deg); }
+    .ad-dock .dk:hover .dk-tip, .ad-dock .dk:focus-visible .dk-tip { transform: translate(-50%, 0); }
+    .ad-dash { padding-bottom: 110px; }
+  }
+  @media (max-width: 520px) {
+    .ad-dash { padding: 22px 14px 110px; }
+    .ad-dash .mt-title { font-size: 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ad-dash *, .ad-dash *::before, .ad-dash *::after,
+    .ad-dock, .ad-dock *, .ad-dock *::before, .ad-dock *::after { animation: none !important; transition: none !important; }
+    .ad-dash .q-dot svg { opacity: 1; }
   }
 </style>
+
+{# ===== Dock samping: shortcut menu admin ===== #}
+<nav class="ad-dock" aria-label="Menu cepat admin">
+  <a href="{{ url_for('admin') }}" class="dk {% if request.endpoint == 'admin' %}is-active{% endif %}" aria-label="Validasi Data Pengajuan">
+    <span class="dk-ic" aria-hidden="true">✅</span>
+    <span class="dk-tip">Validasi Data Pengajuan</span>
+  </a>
+  <a href="{{ url_for('admin_notifikasi') }}" class="dk {% if request.endpoint == 'admin_notifikasi' %}is-active{% endif %}" aria-label="Notifikasi">
+    <span class="dk-ic" aria-hidden="true">🔔</span>
+    <span class="dk-badge js-pending" {% if not pend %}hidden{% endif %}>{{ '99+' if pend > 99 else pend }}</span>
+    <span class="dk-tip">Notifikasi</span>
+  </a>
+  <a href="{{ url_for('data_user') }}" class="dk {% if request.endpoint == 'data_user' %}is-active{% endif %}" aria-label="Data User">
+    <span class="dk-ic" aria-hidden="true">👥</span><span class="dk-tip">Data User</span>
+  </a>
+  <a href="{{ url_for('data_ruangan') }}" class="dk {% if request.endpoint == 'data_ruangan' %}is-active{% endif %}" aria-label="Data Ruangan">
+    <span class="dk-ic" aria-hidden="true">🏢</span><span class="dk-tip">Data Ruangan</span>
+  </a>
+  <a href="{{ url_for('jadwal') }}" class="dk {% if request.endpoint == 'jadwal' %}is-active{% endif %}" aria-label="Jadwal Ruangan">
+    <span class="dk-ic" aria-hidden="true">📅</span><span class="dk-tip">Jadwal Ruangan</span>
+  </a>
+  <a href="{{ url_for('laporan_peminjaman') }}" class="dk {% if request.endpoint == 'laporan_peminjaman' %}is-active{% endif %}" aria-label="Laporan Peminjaman">
+    <span class="dk-ic" aria-hidden="true">📊</span><span class="dk-tip">Laporan Peminjaman</span>
+  </a>
+</nav>
+
+<div class="ad-dash">
+
+  {# ===== Header ===== #}
+  <header class="ad-top ad-in">
+    <span class="ad-tag"><i></i> Panel Admin</span>
+    <h1 class="ad-h1"><span class="g" id="ad-greet">Selamat datang</span>, {{ current_user.username }}</h1>
+    <p class="ad-lead">Kelola pengajuan, data pengguna, ruangan, dan jadwal peminjaman dari satu tempat.</p>
+  </header>
+
+  <section class="ad-bento">
+
+    {# --- Validasi Data Pengajuan --- #}
+    <a href="{{ url_for('admin') }}" class="ad-tile t-main ad-in" style="--d:.2s" data-tilt>
+      <div class="mt-rings" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="mt-grid">
+        <div>
+          <div class="mt-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11.5 11.5 14 16 9"/><path d="M12 3 4.5 6v5.5c0 4.6 3.1 8.1 7.5 9.5 4.4-1.4 7.5-4.9 7.5-9.5V6L12 3Z"/></svg>
+          </div>
+          {% if pend %}<span class="mt-pill"><i></i> {{ pend }} menunggu</span>{% endif %}
+          <span class="mt-title">Validasi Data Pengajuan</span>
+          <span class="mt-desc">Periksa pengajuan peminjaman yang masuk, lalu setujui atau tolak.</span>
+          <span class="mt-cta">
+            Mulai validasi
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+          </span>
+        </div>
+        <div class="q-panel" aria-hidden="true">
+        <div class="q-row" style="--qd:0s">
+          <span class="q-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+          <span class="q-lines"><i></i><i></i></span>
+        </div>
+        <div class="q-row" style="--qd:1.6s">
+          <span class="q-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+          <span class="q-lines"><i></i><i></i></span>
+        </div>
+        <div class="q-row" style="--qd:3.2s">
+          <span class="q-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>
+          <span class="q-lines"><i></i><i></i></span>
+        </div>
+        </div>
+      </div>
+    </a>
+
+    {# --- Jadwal Ruangan --- #}
+    <a href="{{ url_for('jadwal') }}" class="ad-tile t-card t-jadwal c-amber ad-in" style="--d:.3s" data-tilt>
+      <div class="cd-ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>
+      </div>
+      <span class="cd-title">Jadwal Ruangan</span>
+      <span class="cd-desc">Lihat ruangan yang sedang dipakai dan yang masih kosong.</span>
+      <div class="cal" aria-hidden="true">
+        <i></i><i class="on" style="--cd:0s"></i><i></i><i></i><i class="on" style="--cd:.8s"></i><i></i><i></i>
+        <i></i><i></i><i class="on" style="--cd:1.6s"></i><i></i><i></i><i class="on" style="--cd:2.4s"></i><i></i>
+      </div>
+      <span class="cd-cta">
+        Buka jadwal
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+      </span>
+    </a>
+
+    {# --- Data User --- #}
+    <a href="{{ url_for('data_user') }}" class="ad-tile t-card t-sm c-violet ad-in" style="--d:.4s" data-tilt>
+      <div class="cd-ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.4c2 .7 3.5 2.6 3.5 5.6"/></svg>
+      </div>
+      <span class="cd-title">Data User</span>
+      <span class="cd-desc">Kelola akun mahasiswa, dosen, dan petugas fakultas.</span>
+      {% if user_count is defined %}<span class="cd-stat">{{ user_count }} pengguna</span>{% endif %}
+      <span class="cd-cta">
+        Kelola user
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+      </span>
+    </a>
+
+    {# --- Data Ruangan --- #}
+    <a href="{{ url_for('data_ruangan') }}" class="ad-tile t-card t-sm c-sky ad-in" style="--d:.5s" data-tilt>
+      <div class="cd-ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4.5A1.5 1.5 0 0 1 6.5 3h11A1.5 1.5 0 0 1 19 4.5V21"/><path d="M3 21h18M9 8h2M13 8h2M9 12h2M13 12h2M10 21v-4h4v4"/></svg>
+      </div>
+      <span class="cd-title">Data Ruangan</span>
+      <span class="cd-desc">Tambah, ubah, atau nonaktifkan ruangan yang bisa dipinjam.</span>
+      {% if room_count is defined %}<span class="cd-stat">{{ room_count }} ruangan</span>{% endif %}
+      <span class="cd-cta">
+        Kelola ruangan
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+      </span>
+    </a>
+
+    {# --- Laporan Peminjaman --- #}
+    <a href="{{ url_for('laporan_peminjaman') }}" class="ad-tile t-card t-sm c-green ad-in" style="--d:.6s" data-tilt>
+      <div class="cd-ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      </div>
+      <span class="cd-title">Laporan Peminjaman</span>
+      <span class="cd-desc">Rekap peminjaman ruangan untuk dicetak atau diarsipkan.</span>
+      <div class="bars" aria-hidden="true">
+        <i style="--h:55%; --dl:0s"></i><i style="--h:85%; --dl:.3s"></i><i style="--h:45%; --dl:.6s"></i><i style="--h:100%; --dl:.9s"></i><i style="--h:70%; --dl:1.2s"></i>
+      </div>
+      <span class="cd-cta">
+        Buka laporan
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+      </span>
+    </a>
+
+  </section>
+</div>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var canHover = window.matchMedia && window.matchMedia("(hover: hover)").matches;
+
+    // Sapaan sesuai waktu
+    var h = new Date().getHours();
+    var greet = h < 11 ? "Selamat pagi" : h < 15 ? "Selamat siang" : h < 18 ? "Selamat sore" : "Selamat malam";
+    var g = document.getElementById("ad-greet");
+    if (g) g.textContent = greet;
+
+    // Efek miring 3D + cahaya mengikuti kursor
+    if (!reduce && canHover) {
+      document.querySelectorAll(".ad-dash .ad-tile[data-tilt]").forEach(function (t) {
+        t.addEventListener("mousemove", function (e) {
+          var r = t.getBoundingClientRect();
+          var px = e.clientX - r.left, py = e.clientY - r.top;
+          var rx = ((py / r.height) - 0.5) * -5;
+          var ry = ((px / r.width) - 0.5) * 5;
+          t.style.setProperty("--mx", px + "px");
+          t.style.setProperty("--my", py + "px");
+          t.style.transform = "perspective(1000px) rotateX(" + rx.toFixed(2) + "deg) rotateY(" + ry.toFixed(2) + "deg) translateY(-4px)";
+        });
+        t.addEventListener("mouseleave", function () { t.style.transform = ""; });
+      });
+    }
+  })();
+</script>
 
 {% endblock %}

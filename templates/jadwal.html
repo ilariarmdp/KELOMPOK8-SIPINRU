@@ -1,92 +1,314 @@
 {% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='admin_pages.css') }}">
+<style>
+  .ap .jd-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 22px; margin-bottom: 30px; }
+  .ap .jd-card { padding: 24px; }
+  .ap .jd-h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--navy); }
+  .ap .jd-sec { margin: 0 0 14px; }
+
+  /* jam langsung */
+  .ap .jd-clock { display: inline-flex; align-items: center; gap: 9px; font-variant-numeric: tabular-nums; }
+  .ap .jd-live { width: 8px; height: 8px; border-radius: 50%; background: #22a05a; animation: apPing 2s infinite; }
+
+  /* kalender */
+  .ap .jd-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .ap .jd-nav { display: flex; align-items: center; gap: 8px; }
+  .ap .jd-nb {
+    width: 38px; height: 38px; display: grid; place-items: center; border: 0; border-radius: 12px;
+    background: var(--blue-soft); color: var(--navy); cursor: pointer; transition: background .18s, color .18s;
+  }
+  .ap .jd-nb:hover { background: var(--navy); color: #fff; }
+  .ap .jd-nb svg { width: 18px; height: 18px; }
+  .ap .jd-today-btn { width: auto; padding: 0 14px; font: inherit; font-size: 13px; font-weight: 600; }
+  .ap .jd-week, .ap .jd-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .ap .jd-week span { padding-bottom: 6px; text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .ap .jd-day {
+    min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    border: 0; border-radius: 14px; background: transparent; color: var(--text); font: inherit; font-size: 14.5px; cursor: pointer;
+    transition: background .15s ease;
+  }
+  .ap .jd-day:hover { background: var(--blue-soft); }
+  .ap .jd-day.is-today { box-shadow: inset 0 0 0 2px var(--amber-2); font-weight: 700; }
+  .ap .jd-day.is-sel { background: var(--navy); color: #fff; }
+  .ap .jd-day.is-blank { visibility: hidden; pointer-events: none; }
+  .ap .jd-day:focus-visible, .ap .jd-nb:focus-visible { outline: 3px solid rgba(245, 181, 46, .8); outline-offset: 2px; }
+  .ap .jd-dots { display: flex; gap: 3px; height: 6px; }
+  .ap .jd-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--amber-2); }
+  .ap .jd-legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 16px; font-size: 12.5px; color: var(--muted); }
+  .ap .jd-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .ap .jd-legend .l-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber-2); }
+  .ap .jd-legend .l-ring { width: 14px; height: 14px; border-radius: 5px; box-shadow: inset 0 0 0 2px var(--amber-2); }
+
+  /* agenda hari terpilih */
+  .ap .jd-agenda { display: flex; flex-direction: column; }
+  .ap .jd-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; overflow-y: auto; max-height: 420px; }
+  .ap .jd-ev { padding: 14px 16px; border-radius: 16px; background: #f7f9fd; border: 1px solid var(--border); border-left: 5px solid #c5cbd8; }
+  .ap .jd-ev.s-live { border-left-color: #22a05a; background: #f3fbf6; }
+  .ap .jd-ev.s-next { border-left-color: var(--amber-2); }
+  .ap .jd-ev-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+  .ap .jd-time { font-size: 14px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+  .ap .jd-ev-t { font-size: 15px; font-weight: 600; color: var(--text); }
+  .ap .jd-ev-m { margin-top: 2px; font-size: 13px; color: var(--muted); }
+  .ap .jd-none { margin: 22px 0 0; padding: 28px 12px; text-align: center; border-radius: 16px; background: #f7f9fd; color: var(--muted); font-size: 14px; }
+
+  .ap .ap-table tbody tr.is-live { background: #f3fbf6; }
+
+  @media (max-width: 900px) { .ap .jd-grid { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 520px) {
+    .ap .jd-card { padding: 18px 14px; }
+    .ap .jd-day { min-height: 44px; font-size: 13.5px; }
+    .ap .jd-today-btn { display: none; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
+{% set hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'] %}
+<div class="ap">
 
-<div class="jadwal-wrapper">
-    <h2>Jadwal Ruangan</h2>
+  <header class="ap-top">
+    <span class="ap-tag"><i></i> {{ 'Panel Admin' if current_user.role == 'admin' else 'Panel User' }}</span>
+    <h1 class="ap-h1">Jadwal Ruangan</h1>
+    <p class="ap-lead">Daftar peminjaman ruangan yang telah disetujui.</p>
+  </header>
 
-    <table class="admin-table">
+  <div class="ap-bar">
+    <span class="ap-count">{{ jadwal|length }} jadwal disetujui</span>
+    <span class="ap-count jd-clock"><i class="jd-live"></i><span id="jd-clock">--</span></span>
+  </div>
+
+  <section class="jd-grid">
+
+    {# ===== Kalender bulanan ===== #}
+    <div class="ap-card jd-card">
+      <div class="jd-head">
+        <h2 class="jd-h2" id="jd-month">Bulan</h2>
+        <div class="jd-nav">
+          <button type="button" class="jd-nb jd-today-btn" id="jd-today">Hari ini</button>
+          <button type="button" class="jd-nb" id="jd-prev" aria-label="Bulan sebelumnya">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+          </button>
+          <button type="button" class="jd-nb" id="jd-next" aria-label="Bulan berikutnya">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="jd-week" aria-hidden="true"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div>
+      <div class="jd-days" id="jd-days"></div>
+      <div class="jd-legend">
+        <span><i class="l-dot"></i> Ada kegiatan</span>
+        <span><i class="l-ring"></i> Hari ini</span>
+      </div>
+    </div>
+
+    {# ===== Agenda hari yang dipilih ===== #}
+    <div class="ap-card jd-card jd-agenda">
+      <div class="jd-head" style="margin-bottom:0">
+        <h2 class="jd-h2" id="jd-ag-title">Agenda</h2>
+        <span class="ap-count" id="jd-ag-count">0 kegiatan</span>
+      </div>
+      <div class="jd-list" id="jd-ag-list"></div>
+    </div>
+
+  </section>
+
+  {# ===== Semua jadwal ===== #}
+  <h2 class="jd-h2 jd-sec">Semua jadwal</h2>
+  <div class="ap-card">
+    <div class="ap-scroll">
+      <table class="ap-table">
         <thead>
-            <tr>
-                <th>No</th>
-                <th>Nama Ruangan</th>
-                <th>Hari</th>
-                <th>Tanggal</th>
-                <th>Kegiatan</th>
-                <th>Penyelenggara</th>
-            </tr>
+          <tr>
+            <th>No</th>
+            <th>Nama Ruangan</th>
+            <th>Hari</th>
+            <th>Tanggal</th>
+            <th>Waktu</th>
+            <th>Kegiatan</th>
+            <th>Penyelenggara</th>
+            <th>Status</th>
+          </tr>
         </thead>
-
-        <tbody>
-            {% for item in jadwal %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ item.room.name }}</td>
-                <td>{{ item.start_time.strftime('%A') }}</td>
-                <td>{{ item.start_time.strftime('%Y-%m-%d') }}</td>
-                <td>{{ item.kegiatan }}</td>
-                <td>{{ item.nama_pengaju }}</td>
-            </tr>
-
-            {% else %}
-            <tr>
-                <td colspan="6" class="empty">Belum ada data.</td>
-            </tr>
-            {% endfor %}
+        <tbody id="jd-body">
+          {% for item in jadwal %}
+          <tr data-start="{{ item.start_time.strftime('%Y-%m-%dT%H:%M') }}"
+              data-end="{{ item.end_time.strftime('%Y-%m-%dT%H:%M') }}"
+              data-room="{{ item.room.name }}"
+              data-kegiatan="{{ item.kegiatan }}"
+              data-host="{{ item.nama_pengaju }}">
+            <td class="c-no">{{ loop.index }}</td>
+            <td class="ap-name">{{ item.room.name }}</td>
+            <td>{{ hari[item.start_time.strftime('%w')|int] }}</td>
+            <td>{{ item.start_time.strftime('%d-%m-%Y') }}</td>
+            <td>{{ item.start_time.strftime('%H:%M') }} - {{ item.end_time.strftime('%H:%M') }}</td>
+            <td>{{ item.kegiatan }}</td>
+            <td class="ap-muted">{{ item.nama_pengaju }}</td>
+            <td class="jd-st"></td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="ap-empty">Belum ada jadwal ruangan.</td>
+          </tr>
+          {% endfor %}
         </tbody>
-    </table>
+      </table>
+    </div>
+  </div>
+
 </div>
 
-<style>
-.jadwal-wrapper {
-    width: 100%;
-    max-width: 1100px;
-    margin: auto;
-    padding: 30px 20px;
-    text-align: center;
-}
+<script>
+(function () {
+  var MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  var DAYS = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
 
-.jadwal-wrapper h2 {
-    color: #0b2d5c;
-    margin-bottom: 20px;
-    font-size: 28px;
-    font-weight: 700;
-}
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function key(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parse(s) { var p = s.split(/[-T:]/); return new Date(+p[0], +p[1] - 1, +p[2], +p[3], +p[4]); }
+  function hm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
 
-/* TABLE */
-.admin-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #fff;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-}
+  // ---- baca data dari tabel ----
+  var events = [];
+  document.querySelectorAll("#jd-body tr[data-start]").forEach(function (r) {
+    events.push({
+      start: parse(r.dataset.start), end: parse(r.dataset.end),
+      room: r.dataset.room, title: r.dataset.kegiatan, host: r.dataset.host, row: r
+    });
+  });
+  events.sort(function (a, b) { return a.start - b.start; });
 
-.admin-table th,
-.admin-table td {
-    padding: 14px 16px;
-    border-bottom: 1px solid #e6e6e6;
-    text-align: center;
-    font-size: 15px;
-}
+  // ---- kelompokkan per tanggal (termasuk kegiatan lintas hari) ----
+  var byDay = {};
+  events.forEach(function (ev) {
+    var d = new Date(ev.start.getFullYear(), ev.start.getMonth(), ev.start.getDate());
+    var last = new Date(ev.end.getFullYear(), ev.end.getMonth(), ev.end.getDate());
+    for (var i = 0; i < 31 && d <= last; i++) {
+      (byDay[key(d)] = byDay[key(d)] || []).push(ev);
+      d.setDate(d.getDate() + 1);
+    }
+  });
 
-.admin-table th {
-    background-color: #0b2d5c;
-    color: white;
-    font-weight: 600;
-    font-size: 16px;
-}
+  function status(ev, now) {
+    if (now < ev.start) return { cls: "info", label: "Akan datang", card: "s-next" };
+    if (now <= ev.end)  return { cls: "ok",   label: "Berlangsung", card: "s-live" };
+    return { cls: "", label: "Selesai", card: "" };
+  }
+  function pill(st) { return el("span", "ap-pill " + st.cls, st.label); }
 
-.admin-table tr:hover td {
-    background: #f5f9ff;
-}
+  var now = new Date();
+  var todayKey = key(now);
+  var view = new Date(now.getFullYear(), now.getMonth(), 1);
+  var selected = todayKey;
 
-/* EMPTY */
-.empty {
-    padding: 25px;
-    color: #777;
-    font-style: italic;
-}
-</style>
+  var daysBox = document.getElementById("jd-days");
 
+  function renderCalendar() {
+    document.getElementById("jd-month").textContent = MONTHS[view.getMonth()] + " " + view.getFullYear();
+    daysBox.textContent = "";
+    var offset = (new Date(view.getFullYear(), view.getMonth(), 1).getDay() + 6) % 7;
+    var total = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+
+    for (var b = 0; b < offset; b++) daysBox.appendChild(el("span", "jd-day is-blank"));
+
+    for (var n = 1; n <= total; n++) {
+      var date = new Date(view.getFullYear(), view.getMonth(), n);
+      var k = key(date);
+      var list = byDay[k] || [];
+      var btn = el("button", "jd-day" + (k === todayKey ? " is-today" : "") + (k === selected ? " is-sel" : ""));
+      btn.type = "button";
+      btn.setAttribute("aria-label", n + " " + MONTHS[date.getMonth()] + (list.length ? ", " + list.length + " kegiatan" : ""));
+      btn.appendChild(el("span", "", n));
+      var dots = el("span", "jd-dots");
+      for (var i = 0; i < Math.min(list.length, 3); i++) dots.appendChild(el("i"));
+      btn.appendChild(dots);
+      btn.addEventListener("click", (function (kk) {
+        return function () { selected = kk; renderCalendar(); renderAgenda(); };
+      })(k));
+      daysBox.appendChild(btn);
+    }
+  }
+
+  function renderAgenda() {
+    var p = selected.split("-");
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    document.getElementById("jd-ag-title").textContent =
+      (selected === todayKey ? "Hari ini, " : "") + DAYS[d.getDay()] + " " + d.getDate() + " " + MONTHS[d.getMonth()];
+    var list = byDay[selected] || [];
+    document.getElementById("jd-ag-count").textContent = list.length + " kegiatan";
+
+    var box = document.getElementById("jd-ag-list");
+    box.textContent = "";
+    if (!list.length) {
+      box.appendChild(el("p", "jd-none", "Tidak ada kegiatan pada tanggal ini. Semua ruangan kosong."));
+      return;
+    }
+    var cur = new Date();
+    list.forEach(function (ev) {
+      var st = status(ev, cur);
+      var card = el("div", "jd-ev " + st.card);
+      var top = el("div", "jd-ev-top");
+      top.appendChild(el("span", "jd-time", hm(ev.start) + " - " + hm(ev.end)));
+      top.appendChild(pill(st));
+      card.appendChild(top);
+      card.appendChild(el("div", "jd-ev-t", ev.title));
+      card.appendChild(el("div", "jd-ev-m", ev.room + " \u2022 " + ev.host));
+      box.appendChild(card);
+    });
+  }
+
+  function renderTableStatus() {
+    var cur = new Date();
+    events.forEach(function (ev) {
+      var st = status(ev, cur);
+      var cell = ev.row.querySelector(".jd-st");
+      cell.textContent = "";
+      cell.appendChild(pill(st));
+      ev.row.classList.toggle("is-live", st.label === "Berlangsung");
+    });
+  }
+
+  // ---- tombol navigasi ----
+  document.getElementById("jd-prev").addEventListener("click", function () { view.setMonth(view.getMonth() - 1); renderCalendar(); });
+  document.getElementById("jd-next").addEventListener("click", function () { view.setMonth(view.getMonth() + 1); renderCalendar(); });
+  document.getElementById("jd-today").addEventListener("click", function () {
+    var t = new Date();
+    view = new Date(t.getFullYear(), t.getMonth(), 1);
+    selected = key(t);
+    renderCalendar(); renderAgenda();
+  });
+
+  // ---- jam langsung: status ikut berubah tanpa refresh ----
+  var clock = document.getElementById("jd-clock");
+  var lastMinute = -1;
+  function tick() {
+    var t = new Date();
+    clock.textContent = DAYS[t.getDay()] + ", " + t.getDate() + " " + MONTHS[t.getMonth()] + " " + t.getFullYear() +
+      "  " + pad(t.getHours()) + ":" + pad(t.getMinutes()) + ":" + pad(t.getSeconds());
+    if (t.getMinutes() !== lastMinute) {
+      lastMinute = t.getMinutes();
+      if (key(t) !== todayKey) {          // ganti hari
+        if (selected === todayKey) selected = key(t);
+        todayKey = key(t);
+        renderCalendar();
+      }
+      renderTableStatus();
+      renderAgenda();
+    }
+  }
+
+  renderCalendar();
+  renderAgenda();
+  renderTableStatus();
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
 {% endblock %}

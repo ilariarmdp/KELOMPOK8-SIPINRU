@@ -1,106 +1,381 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="dashboard-admin-container">
+<div class="pengajuan-wrap">
+    <span class="panel-badge"><span class="dot"></span>PANEL ADMIN</span>
     <h2>Data Pengajuan</h2>
-    <p>Kelola data permohonan peminjaman ruangan.</p>
+    <p class="subtitle">Kelola data permohonan peminjaman ruangan.</p>
 
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Nama Pengaju</th>
-                <th>Ruangan</th>
-                <th>Kegiatan</th>
-                <th>Waktu</th>
-                <th>Tanggal</th>
-                <th>Berkas</th>
-                <th>Catatan</th>
-                <th>Status</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
+    <div class="toolbar">
+        <span class="count-pill" id="countPill" data-total="{{ data|length }}">{{ data|length }} pengajuan</span>
 
-        <tbody>
-            {% for item in data %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ item.nama_pengaju }}</td>
-                <td>{{ item.room.name if item.room else '-' }}</td>
-                <td>{{ item.kegiatan }}</td>
-                <td>{{ item.start_time.strftime('%H:%M') }} - {{ item.end_time.strftime('%H:%M') }}</td>
-                <td>{{ item.start_time.strftime('%d-%m-%Y') }}</td>
+        <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Cari nama, ruangan, kegiatan, status..." autocomplete="off" aria-label="Cari pengajuan">
+            <button type="button" id="searchClear" class="search-clear" aria-label="Hapus pencarian" hidden>✕</button>
+        </div>
+    </div>
 
-                <td>
-                    {% if item.ktm %}
-                    <div class="berkas-item">
-                        <span>KTM</span>
-                        <a class="btn-small" href="{{ url_for('berkas', filename=item.ktm) }}" target="_blank">Buka</a>
-                        <a class="btn-small" href="{{ url_for('berkas', filename=item.ktm, download=1) }}">Unduh</a>
-                    </div>
-                    {% endif %}
-                    {% if item.surat_izin %}
-                    <div class="berkas-item">
-                        <span>SIK</span>
-                        <a class="btn-small" href="{{ url_for('berkas', filename=item.surat_izin) }}" target="_blank">Buka</a>
-                        <a class="btn-small" href="{{ url_for('berkas', filename=item.surat_izin, download=1) }}">Unduh</a>
-                    </div>
-                    {% endif %}
-                </td>
+    <div class="table-card">
+        <div class="table-scroll">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Pengaju</th>
+                        <th>Ruangan</th>
+                        <th>Kegiatan</th>
+                        <th>Waktu</th>
+                        <th>Tanggal</th>
+                        <th>Berkas</th>
+                        <th>Catatan</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
 
-                <td class="catatan-cell">{{ item.notes if item.notes else '-' }}</td>
+                <tbody id="pengajuanBody">
+                    {% for item in data %}
+                    <tr class="data-row">
+                        <td class="muted">{{ loop.index }}</td>
 
-                <td>
-                    <span class="status {% if item.status == 'approved' %}diterima{% elif item.status == 'pending' %}pending{% elif item.status == 'approved_admin' %}menunggu{% else %}ditolak{% endif %}">
-                        {{ item.status_label }}
-                    </span>
-                </td>
+                        <td>
+                            <div class="user-cell">
+                                <span class="avatar">{{ item.nama_pengaju[:1]|upper if item.nama_pengaju else '?' }}</span>
+                                <span class="user-name">{{ item.nama_pengaju }}</span>
+                            </div>
+                        </td>
 
-                <td>
-                    {% if item.status == 'pending' %}
-                    <form method="post" class="action-buttons">
-                        <input type="hidden" name="booking_id" value="{{ item.id }}">
-                        <button name="action" value="approve" class="btn-approve">✔ Setujui</button>
-                        <button name="action" value="reject" class="btn-reject">✖ Tolak</button>
-                    </form>
+                        <td>
+                            <span class="room-pill">{{ item.room.name if item.room else '-' }}</span>
+                        </td>
+
+                        <td class="strong">{{ item.kegiatan }}</td>
+
+                        <td class="nowrap">{{ item.start_time.strftime('%H:%M') }} - {{ item.end_time.strftime('%H:%M') }}</td>
+                        <td class="nowrap muted">{{ item.start_time.strftime('%d-%m-%Y') }}</td>
+
+                        <td>
+                            {% if item.ktm %}
+                            <div class="berkas-item">
+                                <span class="berkas-label">KTM</span>
+                                <a class="btn-small" href="{{ url_for('berkas', filename=item.ktm) }}" target="_blank">Buka</a>
+                                <a class="btn-small" href="{{ url_for('berkas', filename=item.ktm, download=1) }}">Unduh</a>
+                            </div>
+                            {% endif %}
+                            {% if item.surat_izin %}
+                            <div class="berkas-item">
+                                <span class="berkas-label">SIK</span>
+                                <a class="btn-small" href="{{ url_for('berkas', filename=item.surat_izin) }}" target="_blank">Buka</a>
+                                <a class="btn-small" href="{{ url_for('berkas', filename=item.surat_izin, download=1) }}">Unduh</a>
+                            </div>
+                            {% endif %}
+                            {% if not item.ktm and not item.surat_izin %}
+                            <span class="muted">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="catatan-cell">{{ item.notes if item.notes else '-' }}</td>
+
+                        <td>
+                            <span class="status {% if item.status == 'approved' %}diterima{% elif item.status == 'pending' %}pending{% elif item.status == 'approved_admin' %}menunggu{% else %}ditolak{% endif %}">
+                                <span class="dot"></span>{{ item.status_label }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {% if item.status == 'pending' %}
+                            <form method="post" class="action-buttons">
+                                <input type="hidden" name="booking_id" value="{{ item.id }}">
+                                <button name="action" value="approve" class="btn-approve">✔ Setujui</button>
+                                <button name="action" value="reject" class="btn-reject">✖ Tolak</button>
+                            </form>
+                            {% else %}
+                                <span class="muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
                     {% else %}
-                        <span>-</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="10" class="empty">Belum ada data pengajuan.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    <tr>
+                        <td colspan="10" class="empty">Belum ada data pengajuan.</td>
+                    </tr>
+                    {% endfor %}
+
+                    <tr id="noResultRow" hidden>
+                        <td colspan="10" class="empty">Tidak ada pengajuan yang cocok dengan pencarian.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <style>
-.dashboard-admin-container { width: 100%; padding: 30px; text-align: center; box-sizing: border-box; }
-.dashboard-admin-container h2 { color: #0b2d5c; margin-bottom: 6px; font-size: 30px; font-weight: 700; }
-.dashboard-admin-container p { color: #666; margin-bottom: 22px; }
+.pengajuan-wrap {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 36px 40px 60px;
+    box-sizing: border-box;
+    text-align: left;
+}
 
-.admin-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-.admin-table th, .admin-table td { padding: 14px; border-bottom: 1px solid #eee; text-align: center; font-size: 15px; }
-.admin-table th { background-color: #0b2d5c; color: white; font-weight: 600; }
-.empty { padding: 20px; color: #888; font-style: italic; }
+/* ===== Header ===== */
+.panel-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #e3eefc;
+    color: #0b2d5c;
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+}
+.panel-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #1fa24a; }
 
-.btn-small { background: #bde5ff; padding: 6px 10px; border-radius: 20px; color: #003b6f; font-size: 13px; text-decoration: none; margin: 0 2px; }
-.berkas-item { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 4px 0; font-size: 13px; font-weight: 600; color: #0b2d5c; }
-.catatan-cell { max-width: 220px; text-align: left !important; word-break: break-word; font-size: 14px; color: #444; }
+.pengajuan-wrap h2 {
+    color: #0b2d5c;
+    font-size: 38px;
+    font-weight: 700;
+    margin: 14px 0 4px;
+    line-height: 1.15;
+}
+.pengajuan-wrap .subtitle { color: #5f6b7a; font-size: 16px; margin: 0 0 22px; }
 
-.status { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
-.status.diterima { background: #b8f5c7; color: #137a2a; }
-.status.pending  { background: #ffe8a8; color: #9c6a00; }
-.status.menunggu { background: #cfe3ff; color: #0b2d5c; }
-.status.ditolak  { background: #ffc6c6; color: #b30000; }
+/* ===== Toolbar: count + search ===== */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.count-pill {
+    display: inline-block;
+    background: #e3eefc;
+    color: #0b2d5c;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+}
 
-.action-buttons { display: flex; gap: 8px; justify-content: center; margin: 0; }
-.btn-approve, .btn-reject { border: 0; cursor: pointer; padding: 8px 14px; border-radius: 18px; font-weight: 700; font-family: inherit; }
-.btn-approve { background: #b8f5c7; color: #137a2a; }
-.btn-reject { background: #ffc6c6; color: #b30000; }
+.search-box {
+    position: relative;
+    flex: 0 1 380px;
+    min-width: 240px;
+}
+.search-box input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 52px;
+    padding: 0 42px 0 46px;
+    border: 1.5px solid #dbe3ef;
+    border-radius: 14px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    color: #0b2d5c;
+    outline: none;
+    box-shadow: 0 2px 8px rgba(11, 45, 92, 0.05);
+    transition: border-color .15s, box-shadow .15s;
+}
+.search-box input::placeholder { color: #8a94a3; }
+.search-box input:focus {
+    border-color: #0f3a74;
+    box-shadow: 0 0 0 4px rgba(15, 58, 116, 0.12);
+}
+.search-icon {
+    position: absolute;
+    left: 16px; top: 50%;
+    transform: translateY(-50%);
+    color: #7a8594;
+    pointer-events: none;
+}
+.search-clear {
+    position: absolute;
+    right: 10px; top: 50%;
+    transform: translateY(-50%);
+    width: 26px; height: 26px;
+    border: 0; border-radius: 50%;
+    background: #e3eefc;
+    color: #0b2d5c;
+    font-size: 12px;
+    cursor: pointer;
+}
+.search-clear:hover { background: #cfe3ff; }
+.search-clear[hidden] { display: none; }
+
+/* ===== Card & Table ===== */
+.table-card {
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 8px 28px rgba(11, 45, 92, 0.10);
+}
+.table-scroll { overflow-x: auto; }
+
+.admin-table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+
+.admin-table thead th {
+    background: linear-gradient(90deg, #0b2d5c, #0f3a74);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+    padding: 18px 16px;
+    white-space: nowrap;
+}
+.admin-table tbody td {
+    padding: 16px;
+    font-size: 15px;
+    color: #4a5565;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid #eef1f6;
+}
+.admin-table tbody tr.data-row:nth-child(even) { background: #f8fafd; }
+.admin-table tbody tr.data-row:hover { background: #eef5ff; }
+.admin-table tbody tr:last-child td { border-bottom: 0; }
+.admin-table tbody tr[hidden] { display: none; }
+
+.muted { color: #7a8594; }
+.strong { color: #0b2d5c; font-weight: 600; }
+.nowrap { white-space: nowrap; }
+.empty { padding: 36px 20px !important; color: #8a94a3; font-style: italic; text-align: center !important; }
+
+/* ===== Nama + avatar ===== */
+.user-cell { display: flex; align-items: center; gap: 12px; }
+.avatar {
+    width: 40px; height: 40px; flex-shrink: 0;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #f6a623, #e08a0b);
+    color: #fff; font-weight: 700; font-size: 16px;
+}
+.user-name { color: #0b2d5c; font-weight: 600; }
+
+/* ===== Ruangan ===== */
+.room-pill {
+    display: inline-block;
+    background: #e3eefc;
+    color: #0b4f8a;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ===== Berkas ===== */
+.berkas-item { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.berkas-label { width: 34px; font-size: 12px; font-weight: 700; color: #0b2d5c; letter-spacing: .5px; }
+.btn-small {
+    background: #e3eefc;
+    color: #0b4f8a;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .15s;
+}
+.btn-small:hover { background: #cfe3ff; }
+
+.catatan-cell { max-width: 220px; word-break: break-word; font-size: 14px; }
+
+/* ===== Status ===== */
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.status .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.status.diterima { background: #dcf7e4; color: #137a2a; }
+.status.pending  { background: #fff0c2; color: #9c6a00; }
+.status.menunggu { background: #dbe9ff; color: #0b2d5c; }
+.status.ditolak  { background: #ffdcdc; color: #b30000; }
+
+/* ===== Aksi ===== */
+.action-buttons { display: flex; gap: 8px; margin: 0; }
+.btn-approve, .btn-reject {
+    border: 0; cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 700; font-size: 13px;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: transform .1s, filter .15s;
+}
+.btn-approve { background: #dcf7e4; color: #137a2a; }
+.btn-reject  { background: #ffdcdc; color: #b30000; }
+.btn-approve:hover, .btn-reject:hover { filter: brightness(.95); transform: translateY(-1px); }
+
+@media (max-width: 768px) {
+    .pengajuan-wrap { padding: 24px 16px 40px; }
+    .pengajuan-wrap h2 { font-size: 28px; }
+    .search-box { flex: 1 1 100%; }
+}
 </style>
+
+<script>
+(function () {
+    var input    = document.getElementById('searchInput');
+    var clearBtn = document.getElementById('searchClear');
+    var pill     = document.getElementById('countPill');
+    var noResult = document.getElementById('noResultRow');
+    var rows     = Array.prototype.slice.call(document.querySelectorAll('#pengajuanBody tr.data-row'));
+    var total    = rows.length;
+
+    // Kolom yang ikut dicari: nama, ruangan, kegiatan, waktu, tanggal, catatan, status
+    // (kolom berkas & aksi dilewati supaya "Buka"/"Unduh"/"Setujui" tidak ikut cocok)
+    var SEARCH_COLS = [1, 2, 3, 4, 5, 7, 8];
+
+    var index = rows.map(function (row) {
+        var text = SEARCH_COLS.map(function (i) {
+            return row.cells[i] ? row.cells[i].textContent : '';
+        }).join(' ');
+        return text.replace(/\s+/g, ' ').toLowerCase();
+    });
+
+    function applyFilter() {
+        var q = input.value.trim().toLowerCase();
+        var terms = q ? q.split(' ') : [];
+        var shown = 0;
+
+        rows.forEach(function (row, i) {
+            var match = terms.every(function (t) { return index[i].indexOf(t) !== -1; });
+            row.hidden = !match;
+            if (match) shown++;
+        });
+
+        clearBtn.hidden = !q;
+        pill.textContent = q ? (shown + ' dari ' + total + ' pengajuan') : (total + ' pengajuan');
+        if (noResult) noResult.hidden = !(total > 0 && shown === 0);
+    }
+
+    input.addEventListener('input', applyFilter);
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { input.value = ''; applyFilter(); }
+    });
+    clearBtn.addEventListener('click', function () {
+        input.value = '';
+        applyFilter();
+        input.focus();
+    });
+})();
+</script>
 
 {% endblock %}
