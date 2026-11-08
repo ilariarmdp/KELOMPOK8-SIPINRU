@@ -31,6 +31,9 @@ class LoginForm(FlaskForm):
 # =========================
 # BOOKING
 # =========================
+
+ALLOWED_FILE_EXTENSIONS = ['jpg', 'png', 'pdf']
+
 class BookingForm(FlaskForm):
     nama_pengaju = StringField('Nama Pengaju', validators=[DataRequired()])
     nim_nip = StringField(
@@ -92,12 +95,15 @@ class BookingForm(FlaskForm):
 
     surat_izin = FileField(
         'Surat Izin (Opsional)',
-        validators=[FileAllowed(['jpg', 'png', 'pdf'])]
+        validators=[FileAllowed(ALLOWED_FILE_EXTENSIONS)]
     )
 
     ktm = FileField(
         'Upload KTM',
-        validators=[DataRequired(), FileAllowed(['jpg', 'png', 'pdf'])]
+        validators=[
+            DataRequired(),
+            FileAllowed(ALLOWED_FILE_EXTENSIONS)
+]
     )
 
     submit = SubmitField('Ajukan Peminjaman')
